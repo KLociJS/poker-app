@@ -2,6 +2,12 @@
 
 import { RefObject, useEffect, useMemo, useRef } from "react";
 import styles from "./index.module.css";
+import {
+  connectSocket,
+  disconnectSocket,
+  getSocket,
+  initSocket,
+} from "./socket";
 import { CanvasItem } from "./type";
 import { drawBackground, drawPlayer, reDrawCanvas } from "./utils";
 
@@ -11,6 +17,29 @@ export default function Home() {
   const gameInfoCanvas = useRef<HTMLCanvasElement>(null);
 
   const drawGameInfo = (canvas: RefObject<HTMLCanvasElement>) => {};
+
+  useEffect(() => {
+    initSocket();
+    connectSocket();
+
+    const socket = getSocket();
+    if (socket) {
+      socket.on("message", (message) => {
+        console.log(message);
+      });
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
+  const sendMessage = () => {
+    const socket = getSocket();
+    if (socket) {
+      socket.emit("message", "Hello world!");
+    }
+  };
 
   const canvases: CanvasItem[] = useMemo(
     () => [
@@ -37,7 +66,7 @@ export default function Home() {
 
   return (
     <>
-      <main className={styles.container}>
+      <main className={styles.container} onClick={sendMessage}>
         {canvases.map((canvas) => (
           <canvas
             key={canvas.id}
