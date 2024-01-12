@@ -1,5 +1,5 @@
 import { RefObject } from "react";
-import { CanvasItem, DrawFn, EllipseProps } from "./type";
+import { CanvasItem, DrawFn, EllipseProps } from "../_types/type";
 
 export const drawBackground: DrawFn = (
   canvas: RefObject<HTMLCanvasElement>
