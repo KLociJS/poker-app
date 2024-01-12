@@ -1,12 +1,12 @@
-import { routes } from "@/app/_constants/constants";
+import { ROUTES } from "@/app/_constants/constants";
 import Link from "next/link";
 
 const Links = () => {
   const links = [
-    { href: routes.HOME, label: "Home" },
+    { href: ROUTES.HOME, label: "Home" },
     //{ href: routes.LOGIN, label: "Login" },
     //{ href: routes.SIGNUP, label: "Sign Up" },
-    { href: routes.DASHBOARD, label: "Dashboard" },
+    { href: ROUTES.DASHBOARD, label: "Dashboard" },
   ];
   return (
     <ul>
