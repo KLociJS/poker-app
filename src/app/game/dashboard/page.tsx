@@ -1,5 +1,15 @@
+"use client";
+
+import useConnectSocket from "@/app/_hooks/useConnectSocket";
+
 const Dashboard = () => {
-  return <div>Dashboard</div>;
+  const { socket } = useConnectSocket();
+
+  return (
+    <>
+      <main></main>
+    </>
+  );
 };
 
 export default Dashboard;
