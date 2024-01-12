@@ -7,7 +7,7 @@ import useConnectSocket from "@/app/_hooks/useConnectSocket";
 import { DefaultEventsMap } from "@socket.io/component-emitter";
 import { Socket } from "socket.io-client";
 
-const Game = () => {
+const Game = ({ params }: { params: { gameId: string } }) => {
   const { socket } = useConnectSocket();
   const { canvases } = useCanvas();
 
