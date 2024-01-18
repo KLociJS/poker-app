@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+});
 
-import Nav from "@/app/_components/nav/Nav";
+import Nav from "./_components/nav/Nav";
 import "./global.css";
 
 export const metadata: Metadata = {
