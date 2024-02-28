@@ -1,41 +1,48 @@
 const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { SOCKET_EVENTS } = require("./constants/actions");
-const { createGame, joinGame, getGames } = require("./actions/socketAction");
+
+const { SOCKET_EVENTS } = require("./constants/socketEvents");
+const InitPokerLobby = require("./classes/pokerLobby");
+const {
+  handleJoinLobbyEvent,
+  handleJoinTableEvent,
+} = require("./handlers/socketEventHandlers");
 
 const app = express();
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   cors: { origin: "http://localhost:3000" },
 });
 
-io.on("connection", (socket) => {
-  console.log("user connected");
+let pokerLobby = InitPokerLobby();
 
-  // Send all games to the client when they connect
-  socket.emit(SOCKET_EVENTS.UPDATE_GAMES, getGames());
+io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
+  socket.on(SOCKET_EVENTS.JOIN_LOBBY, (data) =>
+    handleJoinLobbyEvent(data, socket, pokerLobby)
+  );
 
-  // Listen for create game event
-  socket.on(SOCKET_EVENTS.CREATE_GAME, (game) => {
-    createGame(game.name, game.creator);
-    io.emit(SOCKET_EVENTS.UPDATE_GAMES, getGames());
+  socket.on(SOCKET_EVENTS.JOIN_TABLE, (data) => {
+    handleJoinTableEvent(data, socket, io, pokerLobby);
   });
 
-  // Listen for join game event
-  socket.on(SOCKET_EVENTS.JOIN_GAME, (joinRequest) => {
-    const isSuccessful = joinGame(joinRequest);
+  //Debugging rooms
+  // io.of("/").adapter.on("create-room", (room) => {
+  //   console.log(`room ${room} was created`);
+  // });
 
-    if (isSuccessful) {
-      io.emit(SOCKET_EVENTS.UPDATE_GAMES, getGames());
-    } else {
-      io.emit(SOCKET_EVENTS.JOIN_GAME_FAILED);
-    }
-  });
+  // io.of("/").adapter.on("join-room", (room, id) => {
+  //   console.log(`socket ${id} has joined room ${room}`);
+  // });
 
-  // Listen for disconnect event
-  socket.on("disconnect", () => {
+  // io.of("/").adapter.on("leave-room", (room, id) => {
+  //   console.log(`socket ${id} has left room ${room}`);
+  // });
+
+  socket.on(SOCKET_EVENTS.DISCONNECT, () => {
     console.log("user disconnected");
+    socket.leave("lobby");
   });
 });
 

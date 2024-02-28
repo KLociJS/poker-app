@@ -14,3 +14,18 @@ export type EllipseProps = {
   radiusX: number;
   radiusY: number;
 };
+
+export type Player = {
+  id: string;
+  name: string;
+  chips: number;
+};
+
+export type Table = {
+  id: string;
+  name: string;
+  limit: string;
+  stakes: string;
+  maxPlayers: string;
+  players: Player[];
+};

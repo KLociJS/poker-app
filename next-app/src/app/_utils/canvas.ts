@@ -53,9 +53,12 @@ export const drawPlayer: DrawFn = (canvas: RefObject<HTMLCanvasElement>) => {
     if (!ellipseProps) return;
     const { centerX, centerY, radiusX, radiusY } = ellipseProps;
 
-    const numberOfItems = 8;
+    const numberOfItems = 9; // Increase the number of items
+    const startAngle = Math.PI / 2; // Start from the top
+    const angleIncrement = (2 * Math.PI) / numberOfItems;
+
     for (let i = 0; i < numberOfItems; i++) {
-      const angle = (i / numberOfItems) * 2 * Math.PI; // Calculate the angle around the ellipse
+      const angle = startAngle + i * angleIncrement;
 
       const width = 180;
       const height = 80;

@@ -8,12 +8,8 @@ import Style from "../nav.module.css";
 const Links = () => {
   const pathname = usePathname();
 
-  const links = [
-    // { href: ROUTES.HOME, label: "Home" },
-    // { href: ROUTES.LOGIN, label: "Login" },
-    // { href: ROUTES.SIGNUP, label: "Sign Up" },
-    { href: ROUTES.DASHBOARD, label: "Dashboard" },
-  ];
+  const links = [{ href: ROUTES.LOBBY.HREF, label: ROUTES.LOBBY.LABEL }];
+
   return (
     <div className={Style["link-container"]}>
       {links.map(({ href, label }) => (
