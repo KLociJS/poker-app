@@ -1,0 +1,11 @@
+.primary_button {
+  border-color: #f1f1f1;
+  color: #f1f1f1;
+  background-color: #012b58;
+}
+
+.secondary_button {
+  border-color: #012b58;
+  color: #f1f1f1;
+  background-color: transparent;
+}

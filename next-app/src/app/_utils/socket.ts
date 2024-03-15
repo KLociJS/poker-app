@@ -4,14 +4,7 @@ import { Socket, io } from "socket.io-client";
 let socket: Socket<DefaultEventsMap, DefaultEventsMap> | undefined;
 
 export const initSocket = () => {
-  socket = io("http://localhost:3001", { autoConnect: false });
-};
-
-export const connectSocket = () => {
-  if (socket) {
-    console.log("Connecting socket...");
-    socket.connect();
-  }
+  socket = io("http://localhost:3001");
 };
 
 export const disconnectSocket = () => {

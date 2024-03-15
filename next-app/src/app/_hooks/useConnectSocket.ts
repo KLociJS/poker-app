@@ -1,12 +1,7 @@
 import { DefaultEventsMap } from "@socket.io/component-emitter";
 import { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
-import {
-  connectSocket,
-  disconnectSocket,
-  getSocket,
-  initSocket,
-} from "../_utils/socket";
+import { disconnectSocket, getSocket, initSocket } from "../_utils/socket";
 
 const useConnectSocket = () => {
   const [socket, setSocket] = useState<
@@ -15,7 +10,6 @@ const useConnectSocket = () => {
 
   useEffect(() => {
     initSocket();
-    connectSocket();
 
     const socket = getSocket();
 
