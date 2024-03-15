@@ -37,7 +37,7 @@ function PokerTables({
               >
                 <td>{table.id}</td>
                 <td>{table.limit}</td>
-                <td>{table.stakes}</td>
+                <td>{`${table.stakes[0]}$ / ${table.stakes[1]}$`}</td>
                 <td>{`${table.players.length} / ${table.maxPlayers}`}</td>
               </tr>
             ))}
@@ -66,7 +66,10 @@ function PokerTables({
             <div className={Styles.game_details_container}>
               <h3>Table Id: {selectedTable.id}</h3>
               <h3>Limit: {selectedTable.limit}</h3>
-              <h3>Stakes: {selectedTable.stakes}</h3>
+              <h3>
+                Stakes:{" "}
+                {`${selectedTable.stakes[0]}$ / ${selectedTable.stakes[1]}$`}
+              </h3>
               <h3>Max players: {selectedTable.maxPlayers}</h3>
             </div>
             <div className={Styles.table_button_container}>

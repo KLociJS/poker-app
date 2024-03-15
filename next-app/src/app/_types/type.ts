@@ -25,7 +25,7 @@ export type Table = {
   id: string;
   name: string;
   limit: string;
-  stakes: string;
+  stakes: [number, number];
   maxPlayers: string;
   players: Player[];
 };

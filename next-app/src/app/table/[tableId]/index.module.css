@@ -2,6 +2,15 @@
   position: relative;
 }
 
+.test_buttons {
+  position: absolute;
+  display: flex;
+  gap: 1rem;
+  padding: 2rem;
+
+  z-index: 1000;
+}
+
 .canvas {
   position: absolute;
 }

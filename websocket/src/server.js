@@ -7,6 +7,7 @@ const InitPokerLobby = require("./classes/pokerLobby");
 const {
   handleJoinLobbyEvent,
   handleJoinTableEvent,
+  handlePlayerAction,
 } = require("./handlers/socketEventHandlers");
 
 const app = express();
@@ -25,6 +26,10 @@ io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
 
   socket.on(SOCKET_EVENTS.JOIN_TABLE, (data) => {
     handleJoinTableEvent(data, socket, io, pokerLobby);
+  });
+
+  socket.on(SOCKET_EVENTS.PLAYER_ACTION, (data) => {
+    handlePlayerAction(data, socket, io, pokerLobby);
   });
 
   //Debugging rooms

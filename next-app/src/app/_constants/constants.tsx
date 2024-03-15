@@ -11,6 +11,7 @@ export const SOCKET_EVENTS = {
   GET_PLAYERID: "getPlayerId",
   UPDATE_TABLE: "updateTable",
   TABLE_IS_FULL: "tableIsFull",
+  PLAYER_ACTION: "playerAction",
 };
 
 export const GAME_MODE = {

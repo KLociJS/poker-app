@@ -8,6 +8,7 @@ const SOCKET_EVENTS = {
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   GET_PLAYERID: "getPlayerId",
+  PLAYER_ACTION: "playerAction",
 };
 
 module.exports = {
