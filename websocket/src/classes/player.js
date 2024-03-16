@@ -4,9 +4,9 @@ class Player {
     this.id = id;
     this.seatNumber = null;
     this.totalHandCycleBet = 0;
+    this.currentRoundBet = 0;
     this.chips = null;
     this.cards = [];
-    this.allIn = false;
     this.hasSitOut = false;
   }
 
@@ -28,6 +28,12 @@ class Player {
 
   betChips(amount) {
     this.chips -= amount;
+    this.totalHandCycleBet += amount;
+    this.currentRoundBet += amount;
+  }
+
+  resetCurrentRoundBet() {
+    this.currentRoundBet = 0;
   }
 
   hasSitOut() {

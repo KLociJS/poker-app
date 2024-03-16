@@ -7,6 +7,7 @@ class Dealer {
     this.communityCards = [];
 
     this.activePlayers = [];
+    this.playersAllIn = [];
 
     this.isWaitingForPlayerAction = false;
     this.playerToAct = null;
@@ -15,7 +16,7 @@ class Dealer {
     this.pot = 0;
     this.raiseCounter = 0;
     this.currentBet = 0;
-    this.lastBet = 0;
+    this.lastRaiseBetAmount = 0;
 
     this.dealerButtonPosition = 0;
     this.stage = "preFlop";
@@ -32,7 +33,7 @@ class Dealer {
     this.pot = 0;
     this.raiseCounter = 0;
     this.currentBet = 0;
-    this.lastBet = 0;
+    this.lastRaiseBetAmount = 0;
 
     this.stage = STAGES.PRE_FLOP;
 
@@ -78,15 +79,17 @@ class Dealer {
         throw new Error("Invalid player action");
     }
   }
-
+  //tested
   _validatePlayerAction(player, action) {
     // Check if the player is the one to act
     if (player.id !== this.playerToAct.id) {
-      throw new Error("Invalid player action: Not your turn");
+      throw new Error(
+        `Invalid player action: Not ${player.name}'s id:${player.id} turn`
+      );
     }
 
     // Check if player able to check
-    if (action.type === "check" && this.lastBet !== 0) {
+    if (action.type === "check" && this.lastRaiseBetAmount !== 0) {
       throw new Error("Invalid player action: Cannot check when bet is made");
     }
 
@@ -103,75 +106,142 @@ class Dealer {
     }
 
     // Check if the player able to call
-    if (action.type === "call" && this.lastBet === 0) {
+    if (action.type === "call" && this.lastRaiseBetAmount === 0) {
       throw new Error("Invalid player action: Cannot call when no bet is made");
     }
 
     // Check if the player able to raise
+    if (action.type === "raise" && this.lastRaiseBetAmount === 0) {
+      throw new Error(
+        "Invalid player action: Cannot raise when no bet is made"
+      );
+    }
+
+    // Check the players raise amount
     if (
-      (action.type === "raise" && this.lastBet === 0) ||
-      action.amount < this.lastBet * 2 + this.currentBet
+      action.type === "raise" &&
+      action.amount < this.lastRaiseBetAmount + this.currentBet
     ) {
       throw new Error("Invalid player action: Raise amount too low");
     }
 
     // Check if the player has enough chips to call or raise the amount they wants
+    if (player.chips < action.amount) {
+      throw new Error(
+        "Invalid player action: Invalid amount of chips, differs from game state"
+      );
+    }
+
+    // Check if the user wants to bet, call or raise instead of all in
+    if (player.chips === action.amount && action.type !== "allIn") {
+      throw new Error("Invalid player action: Use all in instead");
+    }
+
+    // Check if the player is calling less than they should
     if (
-      action.type === "call" ||
-      action.type === "raise" ||
-      (action.type === "bet" && player.chips < action.amount)
+      action.type === "call" &&
+      action.amount < this.currentBet - player.currentRoundBet
     ) {
-      throw new Error("Player does not have enough chips");
+      throw new Error("Invalid player action: Call amount too low");
     }
   }
-
+  //tested
   _executeCheckAction() {
     this.playerToAct = this._getNextPlayerToAct();
-    this._checkIfBettingRoundEnded();
+    this._checkIfBettingRoundIsOver(player);
   }
-
+  // tested
   _executeFoldAction(player) {
     player.cleanCards();
     this.playerToAct = this._getNextPlayerToAct();
-    this.activePlayers = this.activePlayers.filter((p) => p.id !== player.id);
-    this._checkIfBettingRoundEnded();
+    this._removeActivePlayer(player);
+    this._checkIfBettingRoundIsOver(player);
   }
-
-  //Itt hagytam abba
+  //tested
   _executeBetAction(player, amount) {
     player.betChips(amount);
-    this.currentBet += amount;
-    this.lastBet = amount;
-    this.pot += amount;
-    this.raiseCounter = 0;
-    this.lastPlayerToAct = player;
+    this.currentBet = amount;
+    this.lastRaiseBetAmount = amount;
+    this.pot = amount;
+    this.raiseCounter = 1;
+    this.lastPlayerToAct = this._getLastPlayerToActAfterBetOrRaise(player);
     this.playerToAct = this._getNextPlayerToAct();
-    this._checkIfBettingRoundEnded();
   }
+  //tested
+  _executeCallAction(player, amount) {
+    player.betChips(amount);
+    this.pot += amount;
+    this.playerToAct = this._getNextPlayerToAct();
+    this._checkIfBettingRoundIsOver(player);
+  }
+  //tested
+  _executeRaiseAction(player, amount) {
+    player.betChips(amount);
+    this.lastRaiseBetAmount = amount - this.currentBet;
+    this.currentBet = amount;
+    this.pot += amount;
+    this.raiseCounter++;
+    this.lastPlayerToAct = this._getLastPlayerToActAfterBetOrRaise(player);
+    this.playerToAct = this._getNextPlayerToAct();
+  }
+  //tested
+  _executeAllInAction(player) {
+    this.playersAllIn.push(player);
+    this._removeActivePlayer(player);
 
-  _getNextPlayerToAct() {
-    if (
-      this.playerToAct.id ===
-      this.activePlayers[this.activePlayers.length - 1].id
-    ) {
-      return this.activePlayers[0];
+    if (player.chips > this.currentBet) {
+      this.currentBet = player.chips;
+      this.lastRaiseBetAmount = player.chips;
+      this.raiseCounter++;
+    }
+    this.pot += player.chips;
+    player.betChips(player.chips);
+
+    this.playerToAct = this._getNextPlayerToAct();
+    this._checkIfBettingRoundIsOver(player);
+  }
+  //tested
+  _getLastPlayerToActAfterBetOrRaise(bettingPlayer) {
+    const bettingPlayerIndex = this.activePlayers.findIndex(
+      (p) => p.id === bettingPlayer.id
+    );
+
+    if (bettingPlayerIndex === 0) {
+      return this.activePlayers[this.activePlayers.length - 1];
     } else {
-      const currentPlayerIndex = this.activePlayers.findIndex(
-        (p) => p.id === this.playerToAct.id
-      );
-      return this.activePlayers[currentPlayerIndex + 1];
+      return this.activePlayers[bettingPlayerIndex - 1];
     }
   }
+  //tested
+  _getNextPlayerToAct() {
+    const playerIndex = this.activePlayers.findIndex(
+      (p) => p.id === this.playerToAct.id
+    );
 
-  _checkIfBettingRoundEnded() {
-    if (this.lastPlayerToAct.id === this.playerToAct.id) {
+    if (playerIndex === this.activePlayers.length - 1) {
+      return this.activePlayers[0];
+    } else {
+      return this.activePlayers[playerIndex + 1];
+    }
+  }
+  //tested
+  _removeActivePlayer(player) {
+    this.activePlayers = this.activePlayers.filter((p) => p.id !== player.id);
+  }
+  //tested
+  _checkIfBettingRoundIsOver(player) {
+    if (this.lastPlayerToAct.id === player.id) {
       this.isWaitingForPlayerAction = false;
       this.raiseCounter = 0;
       this.currentBet = 0;
-      this.lastBet = 0;
+      this.lastRaiseBetAmount = 0;
+
+      this.activePlayers.forEach((player) => {
+        player.resetCurrentRoundBet();
+      });
     }
   }
-
+  //tested
   _deductBlinds() {
     const playersAfterDealer = this.activePlayers.slice(
       this.dealerButtonPosition + 1
@@ -188,7 +258,7 @@ class Dealer {
 
     this.pot += 30;
   }
-
+  //tested
   _initFirstAndLastPlayerToAct() {
     const playersAfterDealer = this.activePlayers.slice(
       this.dealerButtonPosition + 1
@@ -207,12 +277,12 @@ class Dealer {
       this.playerToAct = playersInOrder[2];
     }
   }
-
+  //tested
   _dealCard() {
     const card = this.deck.pop();
     return card;
   }
-
+  //tested
   _dealHoleCards() {
     this._clearPlayerCards();
     this._shuffleCards();
@@ -223,13 +293,13 @@ class Dealer {
       player.addCard(card);
     }
   }
-
+  //tested
   _clearPlayerCards() {
     this.activePlayers.forEach((player) => {
       player.cleanCards();
     });
   }
-
+  //tested
   _shuffleCards() {
     this.deck = [...DECK];
 
