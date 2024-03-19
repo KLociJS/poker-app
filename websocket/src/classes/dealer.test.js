@@ -4,29 +4,6 @@ const { GameRules } = require("./gameRules");
 const { Player } = require("./player");
 
 describe("Dealer", () => {
-  describe("_shuffleCards", () => {
-    it("should shuffle the deck of cards", () => {
-      const dealer = new Dealer();
-      const originalDeck = [...dealer.deck];
-      dealer._shuffleCards();
-
-      expect(dealer.deck).toHaveLength(originalDeck.length);
-      expect(dealer.deck).toEqual(expect.arrayContaining(originalDeck));
-    });
-  });
-
-  describe("_dealCard", () => {
-    it("should deal a card from the deck", () => {
-      const dealer = new Dealer();
-      const originalDeck = [...dealer.deck];
-      const card = dealer._dealCard();
-
-      expect(dealer.deck).toHaveLength(originalDeck.length - 1);
-      expect(originalDeck).toContain(card);
-      expect(dealer.deck).not.toContain(card);
-    });
-  });
-
   describe("_deductBlinds", () => {
     describe("2 players, big blind, small blind", () => {
       let dealer;
@@ -119,7 +96,7 @@ describe("Dealer", () => {
 
       dealer._dealHoleCards();
 
-      const remainingDeckLength = dealer.deck.length;
+      const remainingDeckLength = dealer.deck.cards.length;
       const finalPlayerCardCounts = players.map(
         (player) => player.cards.length
       );
@@ -130,12 +107,12 @@ describe("Dealer", () => {
 
       players.forEach((player) => {
         expect(player.cards.every((card) => DECK.includes(card))).toBe(true);
-        expect(player.cards.every((card) => dealer.deck.includes(card))).toBe(
-          false
-        );
+        expect(
+          player.cards.every((card) => dealer.deck.cards.includes(card))
+        ).toBe(false);
       });
 
-      expect(dealer.deck.every((card) => DECK.includes(card))).toBe(true);
+      expect(dealer.deck.cards.every((card) => DECK.includes(card))).toBe(true);
     });
   });
 

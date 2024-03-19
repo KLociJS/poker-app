@@ -1,10 +1,11 @@
 const { DECK } = require("../constants/cards");
+const { Deck } = require("./deck");
 const STAGES = require("../constants/handCycleStage");
 
 class Dealer {
   constructor(gameRules) {
     this.gameRules = gameRules;
-    this.deck = [...DECK];
+    this.deck = new Deck();
     this.communityCards = [];
 
     this.activePlayers = [];
@@ -292,18 +293,13 @@ class Dealer {
     }
   }
   //tested
-  _dealCard() {
-    const card = this.deck.pop();
-    return card;
-  }
-  //tested
   _dealHoleCards() {
     this._clearPlayerCards();
-    this._shuffleCards();
+    this.deck.shuffle();
 
     for (let i = 0; i < this.activePlayers.length * 2; i++) {
       const player = this.activePlayers[i % this.activePlayers.length];
-      const card = this._dealCard();
+      const card = this.deck.drawCard();
       player.addCard(card);
     }
   }
