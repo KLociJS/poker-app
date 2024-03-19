@@ -1,26 +1,22 @@
 const { DECK } = require("../constants/cards");
 const { Deck } = require("./deck");
 const STAGES = require("../constants/handCycleStage");
+const { PlayerManager } = require("./playerManager");
 
 class Dealer {
   constructor(gameRules) {
     this.gameRules = gameRules;
     this.deck = new Deck();
+    this.playerManager = new PlayerManager();
     this.communityCards = [];
 
-    this.activePlayers = [];
-    this.playersAllIn = [];
-
     this.isWaitingForPlayerAction = false;
-    this.playerToAct = null;
-    this.lastPlayerToAct = null;
 
     this.pot = 0;
     this.raiseCounter = 0;
     this.currentBet = 0;
     this.lastRaiseBetAmount = 0;
 
-    this.dealerButtonPosition = 0;
     this.stage = STAGES.PRE_FLOP;
   }
 
@@ -40,16 +36,16 @@ class Dealer {
     this.stage = STAGES.PRE_FLOP;
 
     // Set active players
-    this.activePlayers = activePlayers;
+    this.playerManager.setActivePlayers(activePlayers);
 
     // Deduct small blind and big blind
     this._deductBlinds();
 
     // Deal hole cards
-    this._dealHoleCards(activePlayers);
+    this._dealHoleCards();
 
     // Set first and last player to act
-    this._setFirstAndLastPlayerToAct();
+    this.playerManager.setFirstAndLastPlayerToAct();
 
     // Start betting round
     this.isWaitingForPlayerAction = true;
@@ -84,10 +80,9 @@ class Dealer {
   //tested
   _validatePlayerAction(player, action) {
     // Check if the player is the one to act
-    if (player.id !== this.playerToAct.id) {
-      throw new Error(
-        `Invalid player action: Not ${player.name}'s id:${player.id} turn`
-      );
+    const playerToAct = this.playerManager.getNextPlayerToAct();
+    if (player.id !== playerToAct.id) {
+      throw new Error("Invalid player action: Not player's turn");
     }
 
     // Check if player able to check
@@ -150,14 +145,14 @@ class Dealer {
   }
   //tested
   _executeCheckAction() {
-    this._setNextPlayerToAct();
+    this.playerManager.setNextPlayerToAct();
     this._checkIfBettingRoundIsOver(player);
   }
   // tested
   _executeFoldAction(player) {
     player.cleanCards();
-    this._setNextPlayerToAct();
-    this._removeActivePlayer(player);
+    this.playerManager.setNextPlayerToAct();
+    this.playerManager.removeActivePlayer(player);
     this._checkIfBettingRoundIsOver(player);
   }
   //tested
@@ -167,14 +162,14 @@ class Dealer {
     this.lastRaiseBetAmount = amount;
     this.pot += amount;
     this.raiseCounter = 1;
-    this._setLastPlayerToActAfterBetOrRaise(player);
-    this._setNextPlayerToAct();
+    this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
+    this.playerManager.setNextPlayerToAct();
   }
   //tested
   _executeCallAction(player, amount) {
     this.pot += amount - player.currentRoundBet;
     player.betChips(amount);
-    this._setNextPlayerToAct();
+    this.playerManager.setNextPlayerToAct();
     this._checkIfBettingRoundIsOver(player);
   }
   //tested
@@ -184,61 +179,38 @@ class Dealer {
     this.pot += amount - player.currentRoundBet;
     player.betChips(amount);
     this.raiseCounter++;
-    this._setLastPlayerToActAfterBetOrRaise(player);
-    this._setNextPlayerToAct();
+    this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
+    this.playerManager.setNextPlayerToAct();
   }
   //tested
   _executeAllInAction(player) {
-    this.playersAllIn.push(player);
-    this._removeActivePlayer(player);
+    this.playerManager.addAllInPlayer(player);
+    this.playerManager.removeActivePlayer(player);
 
     if (player.chips > this.currentBet) {
       this.currentBet = player.chips;
       this.lastRaiseBetAmount = player.chips;
       this.raiseCounter++;
-      this._setLastPlayerToActAfterBetOrRaise(player);
+      this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     }
     this.pot += player.chips;
     player.betChips(player.chips);
 
-    this._setNextPlayerToAct();
+    this.playerManager.setNextPlayerToAct();
     this._checkIfBettingRoundIsOver(player);
   }
   //tested
-  _setLastPlayerToActAfterBetOrRaise(bettingPlayer) {
-    const bettingPlayerIndex = this.activePlayers.findIndex(
-      (p) => p.id === bettingPlayer.id
-    );
-
-    this.lastPlayerToAct =
-      bettingPlayerIndex === 0
-        ? this.activePlayers[this.activePlayers.length - 1]
-        : (this.lastPlayerToAct = this.activePlayers[bettingPlayerIndex - 1]);
-  }
-  //tested
-  _setNextPlayerToAct() {
-    const playerIndex = this.activePlayers.findIndex(
-      (p) => p.id === this.playerToAct.id
-    );
-
-    this.playerToAct =
-      playerIndex === this.activePlayers.length - 1
-        ? this.activePlayers[0]
-        : this.activePlayers[playerIndex + 1];
-  }
-  //tested
-  _removeActivePlayer(player) {
-    this.activePlayers = this.activePlayers.filter((p) => p.id !== player.id);
-  }
-  //tested
   _checkIfBettingRoundIsOver(player) {
-    if (this.lastPlayerToAct.id === player.id) {
+    const lastPlayerToAct = this.playerManager.getLastPlayerToAct();
+    if (lastPlayerToAct.id === player.id) {
       this.isWaitingForPlayerAction = false;
       this.raiseCounter = 0;
       this.currentBet = 0;
       this.lastRaiseBetAmount = 0;
 
-      this.activePlayers.forEach((player) => {
+      const activePlayers = this.playerManager.getActivePlayers();
+
+      activePlayers.forEach((player) => {
         player.resetCurrentRoundBet();
       });
 
@@ -252,15 +224,12 @@ class Dealer {
   }
   //tested
   _deductBlinds() {
-    const dealerButtonIndex = this.activePlayers.findIndex(
-      (p) => p.hasDealerButton
-    );
+    const activePlayers = this.playerManager.getActivePlayers();
 
-    const playersAfterDealer = this.activePlayers.slice(dealerButtonIndex + 1);
-    const playersBeforeDealer = this.activePlayers.slice(
-      0,
-      dealerButtonIndex + 1
-    );
+    const dealerButtonIndex = activePlayers.findIndex((p) => p.hasDealerButton);
+
+    const playersAfterDealer = activePlayers.slice(dealerButtonIndex + 1);
+    const playersBeforeDealer = activePlayers.slice(0, dealerButtonIndex + 1);
 
     const reArrangedPlayers = [...playersAfterDealer, ...playersBeforeDealer];
 
@@ -272,51 +241,24 @@ class Dealer {
     this.pot += smallBlind + bigBlind;
   }
   //tested
-  _setFirstAndLastPlayerToAct() {
-    const dealerButtonIndex = this.activePlayers.findIndex(
-      (p) => p.hasDealerButton
-    );
-
-    const playersAfterDealer = this.activePlayers.slice(dealerButtonIndex + 1);
-    const playersBeforeDealer = this.activePlayers.slice(
-      0,
-      dealerButtonIndex + 1
-    );
-
-    const reArrangedPlayers = [...playersAfterDealer, ...playersBeforeDealer];
-    this.lastPlayerToAct = reArrangedPlayers[1];
-
-    if (reArrangedPlayers.length === 2) {
-      this.playerToAct = reArrangedPlayers[0];
-    } else {
-      this.playerToAct = reArrangedPlayers[2];
-    }
-  }
-  //tested
   _dealHoleCards() {
     this._clearPlayerCards();
     this.deck.shuffle();
 
-    for (let i = 0; i < this.activePlayers.length * 2; i++) {
-      const player = this.activePlayers[i % this.activePlayers.length];
+    const activePlayers = this.playerManager.getActivePlayers();
+
+    for (let i = 0; i < activePlayers.length * 2; i++) {
+      const player = activePlayers[i % activePlayers.length];
       const card = this.deck.drawCard();
       player.addCard(card);
     }
   }
   //tested
   _clearPlayerCards() {
-    this.activePlayers.forEach((player) => {
+    const activePlayers = this.playerManager.getActivePlayers();
+    activePlayers.forEach((player) => {
       player.cleanCards();
     });
-  }
-  //tested
-  _shuffleCards() {
-    this.deck = [...DECK];
-
-    for (let i = this.deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
-    }
   }
 
   determineWinner() {

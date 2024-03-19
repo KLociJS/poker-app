@@ -14,22 +14,30 @@ describe("Dealer", () => {
         gameRules = new GameRules("fix", 10, 20, 9);
         dealer = new Dealer(gameRules);
         players = [{ betChips: jest.fn() }, { betChips: jest.fn() }];
-        dealer.activePlayers = players;
+        dealer.playerManager.activePlayers = players;
       });
 
       it("should deduct blinds from the 2nd and 1st player in the activePlayers array", () => {
         players[0].hasDealerButton = true;
         dealer._deductBlinds();
-        expect(dealer.activePlayers[1].betChips).toHaveBeenCalledWith(10);
-        expect(dealer.activePlayers[0].betChips).toHaveBeenCalledWith(20);
+        expect(
+          dealer.playerManager.activePlayers[1].betChips
+        ).toHaveBeenCalledWith(10);
+        expect(
+          dealer.playerManager.activePlayers[0].betChips
+        ).toHaveBeenCalledWith(20);
         expect(dealer.pot).toBe(30);
       });
 
       it("should deduct blinds from the 1st and 2nd player in the activePlayers array", () => {
         players[1].hasDealerButton = true;
         dealer._deductBlinds();
-        expect(dealer.activePlayers[0].betChips).toHaveBeenCalledWith(10);
-        expect(dealer.activePlayers[1].betChips).toHaveBeenCalledWith(20);
+        expect(
+          dealer.playerManager.activePlayers[0].betChips
+        ).toHaveBeenCalledWith(10);
+        expect(
+          dealer.playerManager.activePlayers[1].betChips
+        ).toHaveBeenCalledWith(20);
         expect(dealer.pot).toBe(30);
       });
     });
@@ -47,14 +55,18 @@ describe("Dealer", () => {
           { betChips: jest.fn() },
           { betChips: jest.fn() },
         ];
-        dealer.activePlayers = players;
+        dealer.playerManager.activePlayers = players;
       });
 
       it("should deduct blinds from the 2nd and 3rd player in the activePlayers array", () => {
         players[0].hasDealerButton = true;
         dealer._deductBlinds();
-        expect(dealer.activePlayers[1].betChips).toHaveBeenCalledWith(10);
-        expect(dealer.activePlayers[2].betChips).toHaveBeenCalledWith(20);
+        expect(
+          dealer.playerManager.activePlayers[1].betChips
+        ).toHaveBeenCalledWith(10);
+        expect(
+          dealer.playerManager.activePlayers[2].betChips
+        ).toHaveBeenCalledWith(20);
         expect(dealer.pot).toBe(30);
       });
 
@@ -62,8 +74,12 @@ describe("Dealer", () => {
         players[1].hasDealerButton = true;
 
         dealer._deductBlinds();
-        expect(dealer.activePlayers[2].betChips).toHaveBeenCalledWith(10);
-        expect(dealer.activePlayers[0].betChips).toHaveBeenCalledWith(20);
+        expect(
+          dealer.playerManager.activePlayers[2].betChips
+        ).toHaveBeenCalledWith(10);
+        expect(
+          dealer.playerManager.activePlayers[0].betChips
+        ).toHaveBeenCalledWith(20);
         expect(dealer.pot).toBe(30);
       });
 
@@ -71,8 +87,12 @@ describe("Dealer", () => {
         players[2].hasDealerButton = true;
 
         dealer._deductBlinds();
-        expect(dealer.activePlayers[0].betChips).toHaveBeenCalledWith(10);
-        expect(dealer.activePlayers[1].betChips).toHaveBeenCalledWith(20);
+        expect(
+          dealer.playerManager.activePlayers[0].betChips
+        ).toHaveBeenCalledWith(10);
+        expect(
+          dealer.playerManager.activePlayers[1].betChips
+        ).toHaveBeenCalledWith(20);
         expect(dealer.pot).toBe(30);
       });
     });
@@ -87,7 +107,7 @@ describe("Dealer", () => {
       ];
 
       const dealer = new Dealer();
-      dealer.activePlayers = players;
+      dealer.playerManager.activePlayers = players;
 
       const initialDeckLength = DECK.length;
       const initialPlayerCardCounts = players.map(
@@ -116,69 +136,6 @@ describe("Dealer", () => {
     });
   });
 
-  describe("_setFirstAndLastPlayerToAct", () => {
-    describe("should work with 2 players", () => {
-      let dealer;
-      let players;
-
-      beforeEach(() => {
-        dealer = new Dealer();
-        players = [new Player("Alice", 1), new Player("Bob", 2)];
-        dealer.activePlayers = players;
-      });
-
-      it("should set the first and last players to act", () => {
-        players[0].hasDealerButton = true;
-        dealer._setFirstAndLastPlayerToAct();
-        expect(dealer.playerToAct).toBe(players[1]);
-        expect(dealer.lastPlayerToAct).toBe(players[0]);
-      });
-
-      it("should set the first and last players to act", () => {
-        players[1].hasDealerButton = true;
-        dealer._setFirstAndLastPlayerToAct();
-        expect(dealer.playerToAct).toBe(players[0]);
-        expect(dealer.lastPlayerToAct).toBe(players[1]);
-      });
-    });
-
-    describe("should work with 2+ players", () => {
-      let dealer;
-      let players;
-
-      beforeEach(() => {
-        dealer = new Dealer();
-        players = [
-          new Player("Alice", 1),
-          new Player("Bob", 2),
-          new Player("Charlie", 3),
-        ];
-        dealer.activePlayers = players;
-      });
-
-      it("should set the first and last players to act", () => {
-        players[0].hasDealerButton = true;
-        dealer._setFirstAndLastPlayerToAct();
-        expect(dealer.playerToAct).toBe(players[0]);
-        expect(dealer.lastPlayerToAct).toBe(players[2]);
-      });
-
-      it("should set the first and last players to act", () => {
-        players[1].hasDealerButton = true;
-        dealer._setFirstAndLastPlayerToAct();
-        expect(dealer.playerToAct).toBe(players[1]);
-        expect(dealer.lastPlayerToAct).toBe(players[0]);
-      });
-
-      it("should set the first and last players to act", () => {
-        players[2].hasDealerButton = true;
-        dealer._setFirstAndLastPlayerToAct();
-        expect(dealer.playerToAct).toBe(players[2]);
-        expect(dealer.lastPlayerToAct).toBe(players[1]);
-      });
-    });
-  });
-
   describe("_validatePlayerAction", () => {
     let dealer;
     let player;
@@ -186,7 +143,7 @@ describe("Dealer", () => {
     beforeEach(() => {
       dealer = new Dealer();
       player = new Player("Alice", 1);
-      dealer.playerToAct = player;
+      dealer.playerManager.playerToAct = player;
       dealer.lastRaiseBetAmount = 10;
       dealer.raiseCounter = 3;
       dealer.currentBet = 20;
@@ -196,7 +153,7 @@ describe("Dealer", () => {
       const otherPlayer = new Player("Bob", 2);
       expect(() =>
         dealer._validatePlayerAction(otherPlayer, { type: "check" })
-      ).toThrowError("Invalid player action: Not Bob's id:2 turn");
+      ).toThrowError("Invalid player action: Not player's turn");
     });
 
     it("should throw an error if the player tries to check when a bet is made", () => {
@@ -266,33 +223,6 @@ describe("Dealer", () => {
     });
   });
 
-  describe("_setNextPlayerToAct", () => {
-    let dealer;
-    let players;
-
-    beforeEach(() => {
-      dealer = new Dealer();
-      players = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      dealer.activePlayers = players;
-    });
-
-    it("should work when current player to act is not last", () => {
-      dealer.playerToAct = players[0];
-      dealer._setNextPlayerToAct();
-      expect(dealer.playerToAct).toBe(players[1]);
-    });
-
-    it("should work when current player to act is the last", () => {
-      dealer.playerToAct = players[2];
-      dealer._setNextPlayerToAct();
-      expect(dealer.playerToAct).toBe(players[0]);
-    });
-  });
-
   describe("_checkIfBettingRoundIsOver", () => {
     let dealer;
     let players;
@@ -306,7 +236,7 @@ describe("Dealer", () => {
       ];
 
       players.forEach((player) => (player.currentRoundBet = 20));
-      dealer.activePlayers = players;
+      dealer.playerManager.activePlayers = players;
 
       dealer.isWaitingForPlayerAction = true;
       dealer.raiseCounter = 2;
@@ -315,7 +245,7 @@ describe("Dealer", () => {
     });
 
     it("should work when the betting round is over, resetting state", () => {
-      dealer.lastPlayerToAct = players[0];
+      dealer.playerManager.lastPlayerToAct = players[0];
 
       dealer._checkIfBettingRoundIsOver(players[0]);
 
@@ -329,8 +259,8 @@ describe("Dealer", () => {
     });
 
     it("should work when the betting round is not over", () => {
-      dealer.playerToAct = players[0];
-      dealer.lastPlayerToAct = players[1];
+      dealer.playerManager.playerToAct = players[0];
+      dealer.playerManager.lastPlayerToAct = players[1];
 
       dealer._checkIfBettingRoundIsOver(players[0]);
 
@@ -344,53 +274,6 @@ describe("Dealer", () => {
     });
   });
 
-  describe("_removeActivePlayer", () => {
-    it("should remove the player from the active players", () => {
-      const dealer = new Dealer();
-      const player = new Player("Alice", 1);
-      dealer.activePlayers = [
-        player,
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      dealer._removeActivePlayer(player);
-      expect(dealer.activePlayers).not.toContain(player);
-    });
-  });
-
-  describe("_setLastPlayerToActAfterBetOrRaise", () => {
-    let dealer;
-    let players;
-
-    beforeEach(() => {
-      dealer = new Dealer();
-      players = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      dealer.activePlayers = players;
-    });
-
-    it("should return the last player if the first one bets or raises", () => {
-      dealer._setLastPlayerToActAfterBetOrRaise(players[0]);
-
-      expect(dealer.lastPlayerToAct).toBe(players[2]);
-    });
-
-    it("should return the first player if the second one bets or raises", () => {
-      dealer._setLastPlayerToActAfterBetOrRaise(players[1]);
-
-      expect(dealer.lastPlayerToAct).toBe(players[0]);
-    });
-
-    it("should return the second player if the third one bets or raises", () => {
-      dealer._setLastPlayerToActAfterBetOrRaise(players[2]);
-
-      expect(dealer.lastPlayerToAct).toBe(players[1]);
-    });
-  });
-
   describe("_clearPlayerCards", () => {
     it("should remove all cards from the players", () => {
       const dealer = new Dealer();
@@ -400,7 +283,7 @@ describe("Dealer", () => {
         new Player("Charlie", 3),
       ];
       players.forEach((player) => player.addCard("card"));
-      dealer.activePlayers = players;
+      dealer.playerManager.activePlayers = players;
       dealer._clearPlayerCards();
 
       players.forEach((player) => {
@@ -418,8 +301,8 @@ describe("Dealer", () => {
         new Player("Charlie", 3),
       ];
 
-      dealer.activePlayers = players;
-      dealer.playerToAct = players[0];
+      dealer.playerManager.activePlayers = players;
+      dealer.playerManager.playerToAct = players[0];
 
       dealer._executeBetAction(players[0], 20);
 
@@ -438,9 +321,9 @@ describe("Dealer", () => {
         new Player("Charlie", 3),
       ];
 
-      dealer.activePlayers = players;
-      dealer.playerToAct = players[1];
-      dealer.lastPlayerToAct = players[2];
+      dealer.playerManager.activePlayers = players;
+      dealer.playerManager.playerToAct = players[1];
+      dealer.playerManager.lastPlayerToAct = players[2];
       dealer.currentBet = 20;
       dealer.pot = 20;
       dealer.raiseCounter = 1;
@@ -460,9 +343,9 @@ describe("Dealer", () => {
         new Player("Charlie", 3),
       ];
 
-      dealer.activePlayers = players;
-      dealer.playerToAct = players[1];
-      dealer.lastPlayerToAct = players[2];
+      dealer.playerManager.activePlayers = players;
+      dealer.playerManager.playerToAct = players[1];
+      dealer.playerManager.lastPlayerToAct = players[2];
       dealer.currentBet = 20;
       dealer.lastRaiseBetAmount = 20;
       dealer.pot = 20;
@@ -488,17 +371,17 @@ describe("Dealer", () => {
 
       players[1].chips = 20;
 
-      dealer.activePlayers = players;
-      dealer.playerToAct = players[1];
-      dealer.lastPlayerToAct = players[2];
+      dealer.playerManager.activePlayers = players;
+      dealer.playerManager.playerToAct = players[1];
+      dealer.playerManager.lastPlayerToAct = players[2];
       dealer.currentBet = 20;
       dealer.pot = 20;
 
       dealer._executeAllInAction(players[1]);
 
       expect(dealer.pot).toBe(40);
-      expect(dealer.activePlayers).not.toContain(players[1]);
-      expect(dealer.playersAllIn).toContain(players[1]);
+      expect(dealer.playerManager.activePlayers).not.toContain(players[1]);
+      expect(dealer.playerManager.playersAllIn).toContain(players[1]);
     });
   });
 
@@ -523,8 +406,8 @@ describe("Dealer", () => {
       dealer.executePreFlop(players);
       expect(dealer.stage).toBe("preFlop");
 
-      expect(dealer.playerToAct).toBe(players[0]);
-      expect(dealer.lastPlayerToAct).toBe(players[2]);
+      expect(dealer.playerManager.playerToAct).toBe(players[0]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
 
       expect(dealer.pot).toBe(30);
       expect(players[1].chips).toBe(990);
@@ -537,8 +420,8 @@ describe("Dealer", () => {
       expect(dealer.raiseCounter).toBe(1);
       expect(dealer.pot).toBe(130);
 
-      expect(dealer.playerToAct).toBe(players[1]);
-      expect(dealer.lastPlayerToAct).toBe(players[2]);
+      expect(dealer.playerManager.playerToAct).toBe(players[1]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
 
       dealer.executePlayerAction(players[1], { type: "raise", amount: 200 });
 
@@ -547,8 +430,8 @@ describe("Dealer", () => {
       expect(dealer.raiseCounter).toBe(2);
       expect(dealer.pot).toBe(320);
 
-      expect(dealer.playerToAct).toBe(players[2]);
-      expect(dealer.lastPlayerToAct).toBe(players[0]);
+      expect(dealer.playerManager.playerToAct).toBe(players[2]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[0]);
 
       dealer.executePlayerAction(players[2], { type: "raise", amount: 300 });
       expect(dealer.currentBet).toBe(300);
@@ -556,8 +439,8 @@ describe("Dealer", () => {
       expect(dealer.raiseCounter).toBe(3);
       expect(dealer.pot).toBe(600);
 
-      expect(dealer.playerToAct).toBe(players[0]);
-      expect(dealer.lastPlayerToAct).toBe(players[1]);
+      expect(dealer.playerManager.playerToAct).toBe(players[0]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[1]);
 
       dealer.executePlayerAction(players[0], { type: "raise", amount: 400 });
       expect(dealer.currentBet).toBe(400);
@@ -565,14 +448,14 @@ describe("Dealer", () => {
       expect(dealer.raiseCounter).toBe(4);
       expect(dealer.pot).toBe(900);
 
-      expect(dealer.playerToAct).toBe(players[1]);
-      expect(dealer.lastPlayerToAct).toBe(players[2]);
+      expect(dealer.playerManager.playerToAct).toBe(players[1]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
 
       dealer.executePlayerAction(players[1], { type: "fold" });
-      expect(dealer.activePlayers).not.toContain(players[1]);
+      expect(dealer.playerManager.activePlayers).not.toContain(players[1]);
 
-      expect(dealer.playerToAct).toBe(players[2]);
-      expect(dealer.lastPlayerToAct).toBe(players[2]);
+      expect(dealer.playerManager.playerToAct).toBe(players[2]);
+      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
 
       dealer.executePlayerAction(players[2], { type: "call", amount: 400 });
       expect(dealer.pot).toBe(1000);
