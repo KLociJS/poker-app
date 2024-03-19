@@ -289,7 +289,7 @@ describe("Dealer", () => {
     });
   });
 
-  describe("_getNextPlayerToAct", () => {
+  describe("_setNextPlayerToAct", () => {
     let dealer;
     let players;
 
@@ -381,7 +381,7 @@ describe("Dealer", () => {
     });
   });
 
-  describe("_getLastPlayerToActAfterBetOrRaise", () => {
+  describe("_setLastPlayerToActAfterBetOrRaise", () => {
     let dealer;
     let players;
 
@@ -544,6 +544,7 @@ describe("Dealer", () => {
 
     it("should update game state correctly", () => {
       dealer.executePreFlop(players);
+      expect(dealer.stage).toBe("preFlop");
 
       expect(dealer.playerToAct).toBe(players[0]);
       expect(dealer.lastPlayerToAct).toBe(players[2]);
@@ -600,6 +601,7 @@ describe("Dealer", () => {
       expect(dealer.pot).toBe(1000);
 
       expect(dealer.isWaitingForPlayerAction).toBe(false);
+      expect(dealer.stage).toBe("flop");
 
       expect(players[0].chips).toBe(600);
       expect(players[1].chips).toBe(800);

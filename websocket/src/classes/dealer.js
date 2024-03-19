@@ -240,7 +240,14 @@ class Dealer {
       this.activePlayers.forEach((player) => {
         player.resetCurrentRoundBet();
       });
+
+      this._moveToNextStage();
     }
+  }
+  _moveToNextStage() {
+    const stages = Object.values(STAGES);
+    const currentStageIndex = stages.findIndex((s) => s === this.stage);
+    this.stage = stages[currentStageIndex + 1];
   }
   //tested
   _deductBlinds() {
