@@ -2,7 +2,7 @@ class Player {
   constructor(name, id) {
     this.name = name;
     this.id = id;
-    this.seatNumber = null;
+    this.hasDealerButton = false;
     this.totalHandCycleBet = 0;
     this.currentRoundBet = 0;
     this.chips = null;
@@ -27,9 +27,9 @@ class Player {
   }
 
   betChips(amount) {
-    this.chips -= amount;
-    this.totalHandCycleBet += amount;
-    this.currentRoundBet += amount;
+    this.chips -= amount - this.currentRoundBet;
+    this.totalHandCycleBet += amount - this.currentRoundBet;
+    this.currentRoundBet = amount;
   }
 
   resetCurrentRoundBet() {

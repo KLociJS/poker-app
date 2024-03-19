@@ -1,14 +1,16 @@
 class GameRules {
-  constructor(limit, steaks, maxPlayers) {
+  constructor(limit, smallBlind, bigBlind, maxPlayers) {
     this.limit = limit;
-    this.steaks = steaks;
+    this.smallBlind = smallBlind;
+    this.bigBlind = bigBlind;
     this.maxPlayers = maxPlayers;
   }
 
   getRules() {
     return {
       limit: this.limit,
-      steaks: this.steaks,
+      smallBlind: this.smallBlind,
+      bigBlind: this.bigBlind,
       maxPlayers: this.maxPlayers,
     };
   }
