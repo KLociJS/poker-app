@@ -74,6 +74,4 @@ class PlayerManager {
   }
 }
 
-module.exports = {
-  PlayerManager,
-};
+module.exports = PlayerManager;

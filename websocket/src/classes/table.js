@@ -1,5 +1,5 @@
-const { Dealer } = require("./dealer");
-const { GameRules } = require("./gameRules");
+const Dealer = require("./dealer");
+const GameRules = require("./gameRules");
 
 class Table {
   constructor(id, gameRules, dealer) {

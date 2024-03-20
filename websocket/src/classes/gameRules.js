@@ -16,6 +16,4 @@ class GameRules {
   }
 }
 
-module.exports = {
-  GameRules,
-};
+module.exports = GameRules;

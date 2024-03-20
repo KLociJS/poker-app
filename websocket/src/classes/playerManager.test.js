@@ -1,5 +1,5 @@
-const { Player } = require("./player");
-const { PlayerManager } = require("./playerManager");
+const Player = require("./player");
+const PlayerManager = require("./playerManager");
 
 describe("PlayerManager", () => {
   describe("setFirstAndLastPlayerToAct", () => {

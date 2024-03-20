@@ -18,10 +18,6 @@ class Player {
     this.cards = [];
   }
 
-  setSeatNumber(seatNumber) {
-    this.seatNumber = seatNumber;
-  }
-
   setChips(chips) {
     this.chips = parseInt(chips);
   }
@@ -41,9 +37,4 @@ class Player {
   }
 }
 
-const createPlayer = (id, userName) => new Player(id, userName);
-
-module.exports = {
-  createPlayer,
-  Player,
-};
+module.exports = Player;

@@ -1,45 +1,31 @@
-const { DECK } = require("../constants/cards");
-const { Deck } = require("./deck");
-const STAGES = require("../constants/handCycleStage");
-const { PlayerManager } = require("./playerManager");
+const Deck = require("./deck");
+const PlayerManager = require("./playerManager");
+const PotManager = require("./potManager");
+const GameStageManager = require("./gameStageManager");
 
 class Dealer {
-  constructor(gameRules) {
+  constructor(gameRules, gameRuleValidator) {
     this.gameRules = gameRules;
     this.deck = new Deck();
     this.playerManager = new PlayerManager();
+    this.potManager = new PotManager();
+    this.gameRuleValidator = gameRuleValidator;
+
     this.communityCards = [];
-
-    this.isWaitingForPlayerAction = false;
-
-    this.pot = 0;
-    this.raiseCounter = 0;
-    this.currentBet = 0;
-    this.lastRaiseBetAmount = 0;
-
-    this.stage = STAGES.PRE_FLOP;
+    this.gameStageManager = new GameStageManager();
   }
 
   executePreFlop(activePlayers) {
-    // reset dealer state
     this.communityCards = [];
-
-    this.isWaitingForPlayerAction = false;
-    this.playerToAct = null;
-    this.lastPlayerToAct = null;
-
-    this.pot = 0;
-    this.raiseCounter = 0;
-    this.currentBet = 0;
-    this.lastRaiseBetAmount = 0;
-
-    this.stage = STAGES.PRE_FLOP;
+    this.gameStageManager.initStage();
+    this.potManager.resetState();
 
     // Set active players
     this.playerManager.setActivePlayers(activePlayers);
 
     // Deduct small blind and big blind
-    this._deductBlinds();
+    const { smallBlind, bigBlind } = this.gameRules.getRules();
+    this.potManager.deductBlinds(smallBlind, bigBlind, activePlayers);
 
     // Deal hole cards
     this._dealHoleCards();
@@ -48,197 +34,121 @@ class Dealer {
     this.playerManager.setFirstAndLastPlayerToAct();
 
     // Start betting round
-    this.isWaitingForPlayerAction = true;
+    this.gameStageManager.setIsWaitingForPlayerAction(true);
   }
 
-  executePlayerAction(player, action) {
-    this._validatePlayerAction(player, action);
+  handlePlayerAction(player, action) {
+    // Validate player action
+    const { currentBet, lastRaiseBetAmount, raiseCounter } =
+      this.potManager.getState();
+    const playerToAct = this.playerManager.getNextPlayerToAct();
+    const isWaitingForPlayerAction =
+      this.gameStageManager.getIsWaitingForPlayerAction();
 
+    this.gameRuleValidator.validatePlayerAction(
+      player,
+      playerToAct,
+      action,
+      currentBet,
+      lastRaiseBetAmount,
+      raiseCounter,
+      isWaitingForPlayerAction
+    );
+
+    // Execute player action
     switch (action.type) {
       case "check":
-        this._executeCheckAction();
+        this._handleCheckAction();
+        this._checkIfBettingRoundIsOver(player);
         break;
       case "call":
-        this._executeCallAction(player, action.amount);
+        this._handleCallAction(player, action.amount);
+        this._checkIfBettingRoundIsOver(player);
         break;
       case "raise":
-        this._executeRaiseAction(player, action.amount);
+        this._handleRaiseAction(player, action.amount);
         break;
       case "bet":
-        this._executeBetAction(player, action.amount);
+        this._handleBetAction(player, action.amount);
         break;
       case "fold":
-        this._executeFoldAction(player);
+        this._handleFoldAction(player);
+        this._checkIfBettingRoundIsOver(player);
         break;
       case "allIn":
-        this._executeAllInAction(player);
+        this._handleAllInAction(player);
+        this._checkIfBettingRoundIsOver(player);
         break;
       default:
         throw new Error("Invalid player action");
     }
   }
   //tested
-  _validatePlayerAction(player, action) {
-    // Check if the player is the one to act
-    const playerToAct = this.playerManager.getNextPlayerToAct();
-    if (player.id !== playerToAct.id) {
-      throw new Error("Invalid player action: Not player's turn");
-    }
-
-    // Check if player able to check
-    if (action.type === "check" && this.lastRaiseBetAmount !== 0) {
-      throw new Error("Invalid player action: Cannot check when bet is made");
-    }
-
-    // Check if player able to raise
-    if (action.type === "raise" && this.raiseCounter > 3) {
-      throw new Error("Invalid player action: Raise limit reached");
-    }
-
-    // Check if the player able to bet
-    if (action.type === "bet" && this.currentBet !== 0) {
-      throw new Error(
-        "Invalid player action: Cannot bet when bet is already made"
-      );
-    }
-
-    // Check if the player able to call
-    if (action.type === "call" && this.lastRaiseBetAmount === 0) {
-      throw new Error("Invalid player action: Cannot call when no bet is made");
-    }
-
-    // Check if the player able to raise
-    if (action.type === "raise" && this.lastRaiseBetAmount === 0) {
-      throw new Error(
-        "Invalid player action: Cannot raise when no bet is made"
-      );
-    }
-
-    // Check the players raise amount
-    if (
-      action.type === "raise" &&
-      action.amount + player.currentRoundBet <
-        this.lastRaiseBetAmount + this.currentBet
-    ) {
-      throw new Error("Invalid player action: Raise amount too low");
-    }
-
-    // Check if the player has enough chips to call or raise the amount they wants
-    if (player.chips < action.amount) {
-      throw new Error(
-        "Invalid player action: Invalid amount of chips, differs from game state"
-      );
-    }
-
-    // Check if the user wants to bet, call or raise instead of all in
-    if (player.chips === action.amount && action.type !== "allIn") {
-      throw new Error("Invalid player action: Use all in instead");
-    }
-
-    // Check if the player is calling less than they should
-    if (
-      action.type === "call" &&
-      action.amount + player.currentRoundBet < this.currentBet
-    ) {
-      throw new Error("Invalid player action: Call amount too low");
-    }
-  }
-  //tested
-  _executeCheckAction() {
+  _handleCheckAction() {
     this.playerManager.setNextPlayerToAct();
-    this._checkIfBettingRoundIsOver(player);
   }
   // tested
-  _executeFoldAction(player) {
+  _handleFoldAction(player) {
     player.cleanCards();
     this.playerManager.setNextPlayerToAct();
     this.playerManager.removeActivePlayer(player);
-    this._checkIfBettingRoundIsOver(player);
   }
   //tested
-  _executeBetAction(player, amount) {
+  _handleBetAction(player, amount) {
     player.betChips(amount);
-    this.currentBet = amount;
-    this.lastRaiseBetAmount = amount;
-    this.pot += amount;
-    this.raiseCounter = 1;
+    this.potManager.setCurrentBet(amount);
+    this.potManager.setLastRaiseBetAmount(amount);
+    this.potManager.increasePot(amount);
+    this.potManager.incrementRaiseCounter();
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
   //tested
-  _executeCallAction(player, amount) {
-    this.pot += amount - player.currentRoundBet;
+  _handleCallAction(player, amount) {
+    this.potManager.increasePot(amount - player.currentRoundBet);
     player.betChips(amount);
     this.playerManager.setNextPlayerToAct();
-    this._checkIfBettingRoundIsOver(player);
   }
   //tested
-  _executeRaiseAction(player, amount) {
-    this.lastRaiseBetAmount = amount - this.currentBet;
-    this.currentBet = amount;
-    this.pot += amount - player.currentRoundBet;
+  _handleRaiseAction(player, amount) {
+    const { currentBet } = this.potManager.getState();
+    this.potManager.setLastRaiseBetAmount(amount - currentBet);
+    this.potManager.setCurrentBet(amount);
+    this.potManager.increasePot(amount - player.currentRoundBet);
+    this.potManager.incrementRaiseCounter();
     player.betChips(amount);
-    this.raiseCounter++;
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
   //tested
-  _executeAllInAction(player) {
+  _handleAllInAction(player) {
     this.playerManager.addAllInPlayer(player);
     this.playerManager.removeActivePlayer(player);
 
     if (player.chips > this.currentBet) {
-      this.currentBet = player.chips;
-      this.lastRaiseBetAmount = player.chips;
-      this.raiseCounter++;
+      this.potManager.setCurrentBet(player.chips);
+      this.potManager.setLastRaiseBetAmount(player.chips);
+      this.potManager.incrementRaiseCounter();
       this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     }
-    this.pot += player.chips;
+    this.potManager.increasePot(player.chips);
     player.betChips(player.chips);
-
     this.playerManager.setNextPlayerToAct();
-    this._checkIfBettingRoundIsOver(player);
   }
   //tested
   _checkIfBettingRoundIsOver(player) {
     const lastPlayerToAct = this.playerManager.getLastPlayerToAct();
     if (lastPlayerToAct.id === player.id) {
-      this.isWaitingForPlayerAction = false;
-      this.raiseCounter = 0;
-      this.currentBet = 0;
-      this.lastRaiseBetAmount = 0;
-
+      this.gameStageManager.setIsWaitingForPlayerAction(false);
+      this.potManager.resetBettingRoundState();
       const activePlayers = this.playerManager.getActivePlayers();
 
       activePlayers.forEach((player) => {
         player.resetCurrentRoundBet();
       });
 
-      this._moveToNextStage();
+      this.gameStageManager.setNextStage();
     }
-  }
-  _moveToNextStage() {
-    const stages = Object.values(STAGES);
-    const currentStageIndex = stages.findIndex((s) => s === this.stage);
-    this.stage = stages[currentStageIndex + 1];
-  }
-  //tested
-  _deductBlinds() {
-    const activePlayers = this.playerManager.getActivePlayers();
-
-    const dealerButtonIndex = activePlayers.findIndex((p) => p.hasDealerButton);
-
-    const playersAfterDealer = activePlayers.slice(dealerButtonIndex + 1);
-    const playersBeforeDealer = activePlayers.slice(0, dealerButtonIndex + 1);
-
-    const reArrangedPlayers = [...playersAfterDealer, ...playersBeforeDealer];
-
-    const { smallBlind, bigBlind } = this.gameRules.getRules();
-
-    reArrangedPlayers[0].betChips(smallBlind);
-    reArrangedPlayers[1].betChips(bigBlind);
-
-    this.pot += smallBlind + bigBlind;
   }
   //tested
   _dealHoleCards() {
@@ -266,6 +176,4 @@ class Dealer {
   }
 }
 
-module.exports = {
-  Dealer,
-};
+module.exports = Dealer;
