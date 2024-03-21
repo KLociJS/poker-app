@@ -22,7 +22,7 @@ Players have to wait for their turns.
 
 ### Betting
 - **No limit**: Players can bet any amount equal to or greater than the big blind, up to their entire stack. Raises have to be at least double the last raise. The limit of four raises.
-- For example, in a $1/2 no limit game with a limit of four raises per round, the first player to act could bet any amount from big blind to entire chips. If the first player bet $20 the second player could raise up toa minimum of $42.
+For example, in a $1/2 no limit game with a limit of four raises per round, the first player to act could bet any amount from big blind to entire chips. If the first player bet $20 the second player could raise up toa minimum of $42.
 If the second player re-raise $42 the third player could raise up to $82.
 - **Fixed limit**: The bet amount and raise amount are predetermined. Limit for pre flop and flop is equal to the small blind, for turn and river the limit is equal to the big blind.
 Players can raise up to 4 times each betting round. Each successive raise can be double the amount of the previous one.
