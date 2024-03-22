@@ -1,5 +1,6 @@
 class PotManager {
-  constructor() {
+  constructor(gameRules) {
+    this.gameRules = gameRules;
     this.pot = 0;
     this.raiseCounter = 0;
     this.currentBet = 0;
@@ -44,7 +45,8 @@ class PotManager {
     this.lastRaiseBetAmount = amount;
   }
 
-  deductBlinds(smallBlind, bigBlind, activePlayers) {
+  deductBlinds(activePlayers) {
+    const { smallBlind, bigBlind } = this.gameRules.getRules();
     const dealerButtonIndex = activePlayers.findIndex((p) => p.hasDealerButton);
 
     const playersAfterDealer = activePlayers.slice(dealerButtonIndex + 1);

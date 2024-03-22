@@ -1,8 +1,12 @@
 const { DECK } = require("../constants/cards");
-const NoLimitTexasHoldemRuleValidator = require("./NoLimitTexasHoldemRuleValidator");
+const NoLimitRuleValidator = require("./NoLimitRuleValidator");
 const Dealer = require("./dealer");
+const Deck = require("./deck");
 const GameRules = require("./gameRules");
+const GameStageManager = require("./gameStageManager");
 const Player = require("./player");
+const PlayerManager = require("./playerManager");
+const PotManager = require("./potManager");
 
 describe("Dealer", () => {
   // describe("_deductBlinds", () => {
@@ -108,6 +112,8 @@ describe("Dealer", () => {
       ];
 
       const dealer = new Dealer();
+      dealer.deck = new Deck();
+      dealer.playerManager = new PlayerManager();
       dealer.playerManager.activePlayers = players;
 
       const initialDeckLength = DECK.length;
@@ -143,6 +149,9 @@ describe("Dealer", () => {
 
     beforeEach(() => {
       dealer = new Dealer();
+      dealer.potManager = new PotManager();
+      dealer.playerManager = new PlayerManager();
+      dealer.gameStageManager = new GameStageManager();
       players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -191,6 +200,7 @@ describe("Dealer", () => {
   describe("_clearPlayerCards", () => {
     it("should remove all cards from the players", () => {
       const dealer = new Dealer();
+      dealer.playerManager = new PlayerManager();
       const players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -209,6 +219,8 @@ describe("Dealer", () => {
   describe("_handleBetAction", () => {
     it("should update the state correctly", () => {
       let dealer = new Dealer();
+      dealer.potManager = new PotManager();
+      dealer.playerManager = new PlayerManager();
       let players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -229,6 +241,8 @@ describe("Dealer", () => {
   describe("_handleCallAction", () => {
     it("should update the state correctly", () => {
       let dealer = new Dealer();
+      dealer.potManager = new PotManager();
+      dealer.playerManager = new PlayerManager();
       let players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -251,6 +265,8 @@ describe("Dealer", () => {
   describe("_handleRaiseAction", () => {
     it("should update the state correctly", () => {
       let dealer = new Dealer();
+      dealer.potManager = new PotManager();
+      dealer.playerManager = new PlayerManager();
       let players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -277,6 +293,8 @@ describe("Dealer", () => {
   describe("_handleAllInAction", () => {
     it("should update the state correctly", () => {
       let dealer = new Dealer();
+      dealer.potManager = new PotManager();
+      dealer.playerManager = new PlayerManager();
       let players = [
         new Player("Alice", 1),
         new Player("Bob", 2),
@@ -304,11 +322,26 @@ describe("Dealer", () => {
     let players;
     let gameRules;
     let gameRuleValidator;
+    let potManager;
+    let playerManager;
+    let deck;
+    let gameStageManager;
 
     beforeEach(() => {
-      gameRules = new GameRules("fix", 10, 20, 9);
-      gameRuleValidator = new NoLimitTexasHoldemRuleValidator();
-      dealer = new Dealer(gameRules, gameRuleValidator);
+      deck = new Deck();
+      gameRules = new GameRules("no limit", 10, 20, 9, 4);
+      potManager = new PotManager(gameRules);
+      playerManager = new PlayerManager();
+      gameStageManager = new GameStageManager();
+      gameRuleValidator = new NoLimitRuleValidator(gameRules);
+      dealer = new Dealer(
+        gameRuleValidator,
+        potManager,
+        playerManager,
+        deck,
+        gameStageManager,
+        gameRules
+      );
       players = [
         new Player("Alice", 1),
         new Player("Bob", 2),

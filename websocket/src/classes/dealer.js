@@ -1,18 +1,21 @@
-const Deck = require("./deck");
-const PlayerManager = require("./playerManager");
-const PotManager = require("./potManager");
-const GameStageManager = require("./gameStageManager");
-
 class Dealer {
-  constructor(gameRules, gameRuleValidator) {
+  constructor(
+    playerActionValidator,
+    potManager,
+    playerManager,
+    deck,
+    gameStageManager,
+    gameRules
+  ) {
     this.gameRules = gameRules;
-    this.deck = new Deck();
-    this.playerManager = new PlayerManager();
-    this.potManager = new PotManager();
-    this.gameRuleValidator = gameRuleValidator;
+    this.deck = deck;
+    this.playerManager = playerManager;
+    this.potManager = potManager;
+
+    this.playerActionValidator = playerActionValidator;
 
     this.communityCards = [];
-    this.gameStageManager = new GameStageManager();
+    this.gameStageManager = gameStageManager;
   }
 
   executePreFlop(activePlayers) {
@@ -24,8 +27,7 @@ class Dealer {
     this.playerManager.setActivePlayers(activePlayers);
 
     // Deduct small blind and big blind
-    const { smallBlind, bigBlind } = this.gameRules.getRules();
-    this.potManager.deductBlinds(smallBlind, bigBlind, activePlayers);
+    this.potManager.deductBlinds(activePlayers);
 
     // Deal hole cards
     this._dealHoleCards();
@@ -39,21 +41,7 @@ class Dealer {
 
   handlePlayerAction(player, action) {
     // Validate player action
-    const { currentBet, lastRaiseBetAmount, raiseCounter } =
-      this.potManager.getState();
-    const playerToAct = this.playerManager.getNextPlayerToAct();
-    const isWaitingForPlayerAction =
-      this.gameStageManager.getIsWaitingForPlayerAction();
-
-    this.gameRuleValidator.validatePlayerAction(
-      player,
-      playerToAct,
-      action,
-      currentBet,
-      lastRaiseBetAmount,
-      raiseCounter,
-      isWaitingForPlayerAction
-    );
+    this._validatePlayerAction(player, action);
 
     // Execute player action
     switch (action.type) {
@@ -82,6 +70,71 @@ class Dealer {
       default:
         throw new Error("Invalid player action");
     }
+  }
+  _validatePlayerAction(player, action) {
+    const { currentBet, lastRaiseBetAmount, raiseCounter } =
+      this.potManager.getState();
+    const playerToAct = this.playerManager.getNextPlayerToAct();
+    const isWaitingForPlayerAction =
+      this.gameStageManager.getIsWaitingForPlayerAction();
+    const { limit } = this.gameRules.getRules();
+
+    this.playerActionValidator.validateGlobalRules(
+      player,
+      playerToAct,
+      action,
+      currentBet,
+      isWaitingForPlayerAction
+    );
+
+    switch (limit) {
+      case "no limit":
+        this.playerActionValidator.validateGameSpecificRules(
+          player,
+          action,
+          currentBet,
+          lastRaiseBetAmount,
+          raiseCounter
+        );
+        break;
+      case "fixed limit":
+        this.playerActionValidator.validateGameSpecificRules(
+          player,
+          action,
+          currentBet,
+          lastRaiseBetAmount,
+          raiseCounter
+        );
+        break;
+      case "pot limit":
+        this.playerActionValidator.validateGameSpecificRules(
+          player,
+          action,
+          currentBet,
+          lastRaiseBetAmount,
+          raiseCounter
+        );
+        break;
+
+      default:
+        throw new Error("Invalid game limit");
+    }
+
+    this.playerActionValidator.validateGlobalRules(
+      player,
+      playerToAct,
+      action,
+      currentBet,
+      isWaitingForPlayerAction
+    );
+
+    this.playerActionValidator.validateGameSpecificRules(
+      player,
+      action,
+      currentBet,
+      lastRaiseBetAmount,
+      raiseCounter
+    );
   }
   //tested
   _handleCheckAction() {
