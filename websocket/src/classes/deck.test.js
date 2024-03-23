@@ -15,7 +15,7 @@ describe("Deck", () => {
   it("should draw a card from the deck", () => {
     deck.cards = [...DECK];
     const drawnCard = deck.drawCard();
-    expect(drawnCard).toStrictEqual({ rank: "A", suit: "club" });
+    expect(drawnCard).toStrictEqual({ rank: "A", suit: "c" });
     expect(deck.cards).toEqual([...DECK].slice(0, -1));
   });
 
