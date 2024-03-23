@@ -1,3 +1,5 @@
+const STAGES = require("../constants/handCycleStage");
+
 class Dealer {
   constructor(
     playerActionValidator,
@@ -37,6 +39,36 @@ class Dealer {
 
     // Start betting round
     this.gameStageManager.setIsWaitingForPlayerAction(true);
+  }
+
+  executeNextStage() {
+    const stage = this.gameStageManager.getStage();
+
+    switch (stage) {
+      case STAGES.FLOP:
+        this._dealCommunityCard(3);
+        break;
+      case STAGES.TURN:
+        this._dealCommunityCard(1);
+        break;
+      case STAGES.RIVER:
+        this._dealCommunityCard(1);
+        break;
+      case STAGES.SHOWDOWN:
+        this._determineWinner();
+        break;
+      default:
+        throw new Error("Invalid game stage");
+    }
+  }
+
+  _dealCommunityCard(numberOfCards) {
+    const cards = [];
+    this.deck.burnCard();
+    for (let i = 0; i < numberOfCards; i++) {
+      cards.push(this.deck.drawCard());
+    }
+    this.communityCards.push(...cards);
   }
 
   handlePlayerAction(player, action) {
@@ -224,7 +256,7 @@ class Dealer {
     });
   }
 
-  determineWinner() {
+  _determineWinner() {
     throw new Error("Not implemented");
   }
 }

@@ -1,4 +1,5 @@
 const { DECK } = require("../constants/cards");
+const STAGES = require("../constants/handCycleStage");
 const NoLimitRuleValidator = require("./NoLimitRuleValidator");
 const Dealer = require("./dealer");
 const Deck = require("./deck");
@@ -314,6 +315,104 @@ describe("Dealer", () => {
       expect(dealer.potManager.pot).toBe(40);
       expect(dealer.playerManager.activePlayers).not.toContain(players[1]);
       expect(dealer.playerManager.playersAllIn).toContain(players[1]);
+    });
+  });
+
+  describe("_dealCommunityCard", () => {
+    let dealer;
+
+    beforeEach(() => {
+      dealer = new Dealer();
+      dealer.deck = new Deck();
+      dealer.deck.shuffle();
+      dealer.communityCards = [];
+    });
+
+    it("should deal 1 community card", () => {
+      const initialDeckLength = dealer.deck.cards.length;
+      const initialCommunityCardsLength = dealer.communityCards.length;
+
+      dealer._dealCommunityCard(1);
+
+      const remainingDeckLength = dealer.deck.cards.length;
+      const finalCommunityCardsLength = dealer.communityCards.length;
+
+      expect(remainingDeckLength).toBe(initialDeckLength - 2);
+      expect(finalCommunityCardsLength).toBe(initialCommunityCardsLength + 1);
+    });
+
+    it("should deal 3 community cards", () => {
+      const initialDeckLength = dealer.deck.cards.length;
+      const initialCommunityCardsLength = dealer.communityCards.length;
+
+      dealer._dealCommunityCard(3);
+
+      const remainingDeckLength = dealer.deck.cards.length;
+      const finalCommunityCardsLength = dealer.communityCards.length;
+
+      expect(remainingDeckLength).toBe(initialDeckLength - 4);
+      expect(finalCommunityCardsLength).toBe(initialCommunityCardsLength + 3);
+    });
+  });
+
+  describe("executeNextStage", () => {
+    let dealer;
+
+    beforeEach(() => {
+      dealer = new Dealer();
+      dealer.gameStageManager = new GameStageManager();
+      dealer._dealCommunityCard = jest.fn();
+      dealer._determineWinner = jest.fn();
+    });
+
+    it("should deal 3 community cards on FLOP stage", () => {
+      dealer.gameStageManager.getStage = jest.fn().mockReturnValue(STAGES.FLOP);
+
+      dealer.executeNextStage();
+
+      expect(dealer._dealCommunityCard).toHaveBeenCalledWith(3);
+      expect(dealer._determineWinner).not.toHaveBeenCalled();
+    });
+
+    it("should deal 1 community card on TURN stage", () => {
+      dealer.gameStageManager.getStage = jest.fn().mockReturnValue(STAGES.TURN);
+
+      dealer.executeNextStage();
+
+      expect(dealer._dealCommunityCard).toHaveBeenCalledWith(1);
+      expect(dealer._determineWinner).not.toHaveBeenCalled();
+    });
+
+    it("should deal 1 community card on RIVER stage", () => {
+      dealer.gameStageManager.getStage = jest
+        .fn()
+        .mockReturnValue(STAGES.RIVER);
+
+      dealer.executeNextStage();
+
+      expect(dealer._dealCommunityCard).toHaveBeenCalledWith(1);
+      expect(dealer._determineWinner).not.toHaveBeenCalled();
+    });
+
+    it("should determine the winner on SHOWDOWN stage", () => {
+      dealer.gameStageManager.getStage = jest
+        .fn()
+        .mockReturnValue(STAGES.SHOWDOWN);
+
+      dealer.executeNextStage();
+
+      expect(dealer._dealCommunityCard).not.toHaveBeenCalled();
+      expect(dealer._determineWinner).toHaveBeenCalled();
+    });
+
+    it("should throw an error for invalid game stage", () => {
+      dealer.gameStageManager.getStage = jest
+        .fn()
+        .mockReturnValue("INVALID_STAGE");
+
+      expect(() => dealer.executeNextStage()).toThrow("Invalid game stage");
+      expect(dealer._dealCommunityCard).not.toHaveBeenCalled();
+      expect(dealer._determineWinner).not.toHaveBeenCalled();
     });
   });
 
