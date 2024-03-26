@@ -22,7 +22,7 @@ class Dealer {
 
   executePreFlop(activePlayers) {
     this.communityCards = [];
-    this.gameStageManager.initStage();
+    this.gameStageManager.resetState();
     this.potManager.resetState();
 
     // Set active players
@@ -38,7 +38,7 @@ class Dealer {
     this.playerManager.setFirstAndLastPlayerToAct();
 
     // Start betting round
-    this.gameStageManager.setIsWaitingForPlayerAction(true);
+    this.gameStageManager.toggleWaitingForPlayerAction();
   }
 
   executeNextStage() {
@@ -47,15 +47,19 @@ class Dealer {
     switch (stage) {
       case STAGES.FLOP:
         this._dealCommunityCard(3);
+        this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.TURN:
         this._dealCommunityCard(1);
+        this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.RIVER:
         this._dealCommunityCard(1);
+        this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.SHOWDOWN:
         this._executeShowdown();
+        this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       default:
         throw new Error("Invalid game stage");
@@ -107,8 +111,7 @@ class Dealer {
     const { currentBet, lastRaiseBetAmount, raiseCounter } =
       this.potManager.getState();
     const playerToAct = this.playerManager.getNextPlayerToAct();
-    const isWaitingForPlayerAction =
-      this.gameStageManager.getIsWaitingForPlayerAction();
+    const { isWaitingForPlayerAction } = this.gameStageManager.getState();
     const { limit } = this.gameRules.getRules();
 
     this.playerActionValidator.validateGlobalRules(
@@ -224,7 +227,7 @@ class Dealer {
   _checkIfBettingRoundIsOver(player) {
     const lastPlayerToAct = this.playerManager.getLastPlayerToAct();
     if (lastPlayerToAct.id === player.id) {
-      this.gameStageManager.setIsWaitingForPlayerAction(false);
+      this.gameStageManager.toggleWaitingForPlayerAction();
       this.potManager.resetBettingRoundState();
       const activePlayers = this.playerManager.getActivePlayers();
 

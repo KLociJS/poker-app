@@ -9,38 +9,59 @@ describe("GameStageManager", () => {
   });
 
   it("should initialize with correct initial values", () => {
-    expect(gameStageManager.getIsWaitingForPlayerAction()).toBe(false);
-    expect(gameStageManager.getStage()).toBe(STAGES.PRE_FLOP);
+    const { isWaitingForPlayerAction, stage } = gameStageManager.getState();
+    expect(isWaitingForPlayerAction).toBe(false);
+    expect(stage).toBe(STAGES.PRE_FLOP);
   });
 
-  it("should set and get the 'isWaitingForPlayerAction' value correctly", () => {
-    gameStageManager.setIsWaitingForPlayerAction(true);
-    expect(gameStageManager.getIsWaitingForPlayerAction()).toBe(true);
-
-    gameStageManager.setIsWaitingForPlayerAction(false);
-    expect(gameStageManager.getIsWaitingForPlayerAction()).toBe(false);
+  it("should set the isWaitingForPlayerAction from true to false", () => {
+    gameStageManager.isWaitingForPlayerAction = true;
+    gameStageManager.toggleWaitingForPlayerAction();
+    const { isWaitingForPlayerAction } = gameStageManager.getState();
+    expect(isWaitingForPlayerAction).toBe(false);
   });
 
-  it("should set the next stage correctly", () => {
-    gameStageManager.setNextStage();
-    expect(gameStageManager.getStage()).toBe(STAGES.FLOP);
+  it("should set the isWaitingForPlayerAction from false to true", () => {
+    gameStageManager.toggleWaitingForPlayerAction();
+    const { isWaitingForPlayerAction } = gameStageManager.getState();
+    expect(isWaitingForPlayerAction).toBe(true);
+  });
 
+  it("should set the next stage from pre flop to flop", () => {
     gameStageManager.setNextStage();
-    expect(gameStageManager.getStage()).toBe(STAGES.TURN);
+    const { stage } = gameStageManager.getState();
+    expect(stage).toBe(STAGES.FLOP);
+  });
 
+  it("should set the next stage from flop to turn", () => {
+    gameStageManager.stage = STAGES.FLOP;
     gameStageManager.setNextStage();
-    expect(gameStageManager.getStage()).toBe(STAGES.RIVER);
+    const { stage } = gameStageManager.getState();
+    expect(stage).toBe(STAGES.TURN);
+  });
 
+  it("should set the next stage from turn to river", () => {
+    gameStageManager.stage = STAGES.TURN;
     gameStageManager.setNextStage();
-    expect(gameStageManager.getStage()).toBe(STAGES.SHOWDOWN);
+    const { stage } = gameStageManager.getState();
+    expect(stage).toBe(STAGES.RIVER);
+  });
+
+  it("should set the next stage from river to showdown", () => {
+    gameStageManager.stage = STAGES.RIVER;
+    gameStageManager.setNextStage();
+    const { stage } = gameStageManager.getState();
+    expect(stage).toBe(STAGES.SHOWDOWN);
   });
 
   it("should initialize the stage correctly", () => {
-    gameStageManager.setIsWaitingForPlayerAction(true);
-    gameStageManager.setNextStage();
-    gameStageManager.initStage();
+    gameStageManager.isWaitingFirPlayerAction = true;
+    gameStageManager.stage = STAGES.SHOWDOWN;
+    gameStageManager.resetState();
 
-    expect(gameStageManager.getIsWaitingForPlayerAction()).toBe(false);
-    expect(gameStageManager.getStage()).toBe(STAGES.PRE_FLOP);
+    const { isWaitingForPlayerAction, stage } = gameStageManager.getState();
+
+    expect(isWaitingForPlayerAction).toBe(false);
+    expect(stage).toBe(STAGES.PRE_FLOP);
   });
 });

@@ -6,16 +6,15 @@ class GameStageManager {
     this.stage = STAGES.PRE_FLOP;
   }
 
-  getIsWaitingForPlayerAction() {
-    return this.isWaitingForPlayerAction;
+  getState() {
+    return {
+      isWaitingForPlayerAction: this.isWaitingForPlayerAction,
+      stage: this.stage,
+    };
   }
 
-  setIsWaitingForPlayerAction(value) {
-    this.isWaitingForPlayerAction = value;
-  }
-
-  getStage() {
-    return this.stage;
+  toggleWaitingForPlayerAction() {
+    this.isWaitingForPlayerAction = !this.isWaitingForPlayerAction;
   }
 
   setNextStage() {
@@ -24,7 +23,7 @@ class GameStageManager {
     this.stage = stages[currentStageIndex + 1];
   }
 
-  initStage() {
+  resetState() {
     this.isWaitingForPlayerAction = false;
     this.stage = STAGES.PRE_FLOP;
   }
