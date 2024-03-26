@@ -171,44 +171,38 @@ class Dealer {
       raiseCounter
     );
   }
-  //tested
   _handleCheckAction() {
     this.playerManager.setNextPlayerToAct();
   }
-  // tested
   _handleFoldAction(player) {
     player.cleanCards();
     this.playerManager.setNextPlayerToAct();
     this.playerManager.removeActivePlayer(player);
   }
-  //tested
   _handleBetAction(player, amount) {
     player.betChips(amount);
     this.potManager.setCurrentBet(amount);
     this.potManager.setLastRaiseBetAmount(amount);
-    this.potManager.increasePot(amount);
+    this.potManager.addToPot(amount);
     this.potManager.incrementRaiseCounter();
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
-  //tested
   _handleCallAction(player, amount) {
-    this.potManager.increasePot(amount - player.currentRoundBet);
+    this.potManager.addToPot(amount - player.currentRoundBet);
     player.betChips(amount);
     this.playerManager.setNextPlayerToAct();
   }
-  //tested
   _handleRaiseAction(player, amount) {
     const { currentBet } = this.potManager.getState();
     this.potManager.setLastRaiseBetAmount(amount - currentBet);
     this.potManager.setCurrentBet(amount);
-    this.potManager.increasePot(amount - player.currentRoundBet);
+    this.potManager.addToPot(amount - player.currentRoundBet);
     this.potManager.incrementRaiseCounter();
     player.betChips(amount);
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
-  //tested
   _handleAllInAction(player) {
     this.playerManager.addAllInPlayer(player);
     this.playerManager.removeActivePlayer(player);
@@ -219,11 +213,10 @@ class Dealer {
       this.potManager.incrementRaiseCounter();
       this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     }
-    this.potManager.increasePot(player.chips);
+    this.potManager.addToPot(player.chips);
     player.betChips(player.chips);
     this.playerManager.setNextPlayerToAct();
   }
-  //tested
   _checkIfBettingRoundIsOver(player) {
     const lastPlayerToAct = this.playerManager.getLastPlayerToAct();
     if (lastPlayerToAct.id === player.id) {
@@ -238,7 +231,6 @@ class Dealer {
       this.gameStageManager.setNextStage();
     }
   }
-  //tested
   _dealHoleCards() {
     this._clearPlayerCards();
     this.deck.shuffle();
@@ -251,7 +243,6 @@ class Dealer {
       player.addCard(card);
     }
   }
-  //tested
   _clearPlayerCards() {
     const activePlayers = this.playerManager.getActivePlayers();
     activePlayers.forEach((player) => {
@@ -263,28 +254,22 @@ class Dealer {
     const activePlayers = this.playerManager.getActivePlayers();
     const allInPlayers = this.playerManager.getAllInPlayers();
 
-    if (allInPlayers.length === 0) {
+    const areAllPlayersBetEqually = this.potManager.areAllPlayersBettingEqually(
+      activePlayers,
+      allInPlayers
+    );
+
+    if (areAllPlayersBetEqually) {
       const winner = this.handEvaluator.determineWinner(
         activePlayers,
         this.communityCards
       );
-      const winnerCount = winner.length;
-      const distributedPot = this.potManager.getState().pot / winnerCount;
-      winner.forEach((player) => {
-        this.potManager.awardPot(player, distributedPot);
-      });
-      this.potManager.resetState();
+      this.potManager.awardPot(winner);
     } else {
-      let pots = [
-        ...allInPlayers.map((p) => p.totalHandCycleBet),
-        activePlayers[0].totalHandCycleBet,
-      ];
-      pots.sort((a, b) => a - b);
-      pots = pots
-        .map((p, i) => {
-          return i === 0 ? p : p - pots[i - 1];
-        })
-        .filter((p) => p === 0);
+      const pots = this.potManager.calculateSidePots(
+        activePlayers,
+        allInPlayers
+      );
 
       pots.forEach((pot) => {
         const playersEligibleForPot = [
@@ -295,14 +280,10 @@ class Dealer {
           playersEligibleForPot,
           this.communityCards
         );
-        const winnerCount = winner.length;
-        const distributedPot = pot / winnerCount;
-        winner.forEach((player) => {
-          this.potManager.awardPot(player, distributedPot);
-          player.deductTotalHandCycleBet(distributedPot);
-        });
+        this.potManager.awardPot(winner);
       });
     }
+    this.potManager.resetState();
   }
 }
 

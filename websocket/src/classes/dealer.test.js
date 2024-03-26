@@ -567,10 +567,9 @@ describe("Dealer", () => {
         activePlayers,
         communityCards
       );
-      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
+      expect(dealer.potManager.awardPot).toHaveBeenCalledWith([
         activePlayers[1],
-        20
-      );
+      ]);
     });
   });
 });
