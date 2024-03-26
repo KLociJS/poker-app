@@ -51,7 +51,11 @@ describe("Player", () => {
     expect(player.chips).toBe(50);
     expect(player.totalHandCycleBet).toBe(50);
     expect(player.currentRoundBet).toBe(50);
+  });
 
+  it("should raise correctly", () => {
+    player.setChips(100);
+    player.betChips(50);
     player.betChips(75);
     expect(player.chips).toBe(25);
     expect(player.totalHandCycleBet).toBe(75);
@@ -62,6 +66,18 @@ describe("Player", () => {
     player.betChips(50);
     player.resetCurrentRoundBet();
     expect(player.currentRoundBet).toBe(0);
+  });
+
+  it("should award chips correctly", () => {
+    player.setChips(100);
+    player.awardChips(50);
+    expect(player.chips).toBe(150);
+  });
+
+  it("should deduct total hand cycle bet correctly", () => {
+    player.totalHandCycleBet = 100;
+    player.deductTotalHandCycleBet(50);
+    expect(player.totalHandCycleBet).toBe(50);
   });
 
   it("should return hasSitOut correctly", () => {
