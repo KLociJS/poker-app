@@ -14,6 +14,10 @@ class PlayerManager {
     this.activePlayers = players;
   }
 
+  getAllInPlayers() {
+    return this.playersAllIn;
+  }
+
   addAllInPlayer(player) {
     this.playersAllIn.push(player);
   }

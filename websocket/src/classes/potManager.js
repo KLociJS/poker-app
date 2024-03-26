@@ -61,6 +61,11 @@ class PotManager {
     this.setLastRaiseBetAmount(bigBlind);
     this.increasePot(smallBlind + bigBlind);
   }
+
+  awardPot(winner, amount) {
+    winner.awardChips(amount);
+    this.pot -= amount;
+  }
 }
 
 module.exports = PotManager;

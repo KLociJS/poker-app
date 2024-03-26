@@ -28,6 +28,14 @@ class Player {
     this.currentRoundBet = amount;
   }
 
+  awardChips(amount) {
+    this.chips += amount;
+  }
+
+  deductTotalHandCycleBet(amount) {
+    this.totalHandCycleBet -= amount;
+  }
+
   resetCurrentRoundBet() {
     this.currentRoundBet = 0;
   }

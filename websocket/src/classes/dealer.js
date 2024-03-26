@@ -7,17 +7,17 @@ class Dealer {
     playerManager,
     deck,
     gameStageManager,
-    gameRules
+    gameRules,
+    handEvaluator
   ) {
     this.gameRules = gameRules;
     this.deck = deck;
     this.playerManager = playerManager;
     this.potManager = potManager;
-
     this.playerActionValidator = playerActionValidator;
-
     this.communityCards = [];
     this.gameStageManager = gameStageManager;
+    this.handEvaluator = handEvaluator;
   }
 
   executePreFlop(activePlayers) {
@@ -55,7 +55,7 @@ class Dealer {
         this._dealCommunityCard(1);
         break;
       case STAGES.SHOWDOWN:
-        this._determineWinner();
+        this._executeShowdown();
         break;
       default:
         throw new Error("Invalid game stage");
@@ -256,8 +256,50 @@ class Dealer {
     });
   }
 
-  _determineWinner() {
-    throw new Error("Not implemented");
+  _executeShowdown() {
+    const activePlayers = this.playerManager.getActivePlayers();
+    const allInPlayers = this.playerManager.getAllInPlayers();
+
+    if (allInPlayers.length === 0) {
+      const winner = this.handEvaluator.determineWinner(
+        activePlayers,
+        this.communityCards
+      );
+      const winnerCount = winner.length;
+      const distributedPot = this.potManager.getState().pot / winnerCount;
+      winner.forEach((player) => {
+        this.potManager.awardPot(player, distributedPot);
+      });
+      this.potManager.resetState();
+    } else {
+      let pots = [
+        ...allInPlayers.map((p) => p.totalHandCycleBet),
+        activePlayers[0].totalHandCycleBet,
+      ];
+      pots.sort((a, b) => a - b);
+      pots = pots
+        .map((p, i) => {
+          return i === 0 ? p : p - pots[i - 1];
+        })
+        .filter((p) => p === 0);
+
+      pots.forEach((pot) => {
+        const playersEligibleForPot = [
+          ...allInPlayers.filter((p) => p.totalHandCycleBet >= pot),
+          ...activePlayers,
+        ];
+        const winner = this.handEvaluator.determineWinner(
+          playersEligibleForPot,
+          this.communityCards
+        );
+        const winnerCount = winner.length;
+        const distributedPot = pot / winnerCount;
+        winner.forEach((player) => {
+          this.potManager.awardPot(player, distributedPot);
+          player.deductTotalHandCycleBet(distributedPot);
+        });
+      });
+    }
   }
 }
 

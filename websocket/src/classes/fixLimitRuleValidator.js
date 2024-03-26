@@ -12,7 +12,7 @@ class FixLimitRuleValidator extends GlobalRuleValidator {
     lastRaiseBetAmount,
     currentBet
   ) {
-    const { smallBlind, bigBlind, raiseLimit } = this.gameRules.getRules();
+    const { smallBlind, bigBlind } = this.gameRules.getRules();
 
     // Check if the player raised amount is correct
     if (

@@ -1,5 +1,6 @@
 const { DECK } = require("../constants/cards");
 const STAGES = require("../constants/handCycleStage");
+const HandEvaluator = require("./HandEvaluator");
 const NoLimitRuleValidator = require("./NoLimitRuleValidator");
 const Dealer = require("./dealer");
 const Deck = require("./deck");
@@ -362,7 +363,7 @@ describe("Dealer", () => {
       dealer = new Dealer();
       dealer.gameStageManager = new GameStageManager();
       dealer._dealCommunityCard = jest.fn();
-      dealer._determineWinner = jest.fn();
+      dealer._executeShowdown = jest.fn();
     });
 
     it("should deal 3 community cards on FLOP stage", () => {
@@ -371,7 +372,7 @@ describe("Dealer", () => {
       dealer.executeNextStage();
 
       expect(dealer._dealCommunityCard).toHaveBeenCalledWith(3);
-      expect(dealer._determineWinner).not.toHaveBeenCalled();
+      expect(dealer._executeShowdown).not.toHaveBeenCalled();
     });
 
     it("should deal 1 community card on TURN stage", () => {
@@ -380,7 +381,7 @@ describe("Dealer", () => {
       dealer.executeNextStage();
 
       expect(dealer._dealCommunityCard).toHaveBeenCalledWith(1);
-      expect(dealer._determineWinner).not.toHaveBeenCalled();
+      expect(dealer._executeShowdown).not.toHaveBeenCalled();
     });
 
     it("should deal 1 community card on RIVER stage", () => {
@@ -391,7 +392,7 @@ describe("Dealer", () => {
       dealer.executeNextStage();
 
       expect(dealer._dealCommunityCard).toHaveBeenCalledWith(1);
-      expect(dealer._determineWinner).not.toHaveBeenCalled();
+      expect(dealer._executeShowdown).not.toHaveBeenCalled();
     });
 
     it("should determine the winner on SHOWDOWN stage", () => {
@@ -402,7 +403,7 @@ describe("Dealer", () => {
       dealer.executeNextStage();
 
       expect(dealer._dealCommunityCard).not.toHaveBeenCalled();
-      expect(dealer._determineWinner).toHaveBeenCalled();
+      expect(dealer._executeShowdown).toHaveBeenCalled();
     });
 
     it("should throw an error for invalid game stage", () => {
@@ -412,7 +413,7 @@ describe("Dealer", () => {
 
       expect(() => dealer.executeNextStage()).toThrow("Invalid game stage");
       expect(dealer._dealCommunityCard).not.toHaveBeenCalled();
-      expect(dealer._determineWinner).not.toHaveBeenCalled();
+      expect(dealer._executeShowdown).not.toHaveBeenCalled();
     });
   });
 
@@ -514,6 +515,99 @@ describe("Dealer", () => {
       expect(players[0].chips).toBe(600);
       expect(players[1].chips).toBe(800);
       expect(players[2].chips).toBe(600);
+    });
+  });
+
+  describe("_executeShowdown", () => {
+    let dealer;
+    let playerManager;
+    let potManager;
+    let handEvaluator;
+    let communityCards;
+
+    beforeEach(() => {
+      dealer = new Dealer();
+      playerManager = new PlayerManager();
+      potManager = new PotManager();
+      handEvaluator = new HandEvaluator();
+      communityCards = [
+        { rank: "A", suit: "H" },
+        { rank: "8", suit: "c" },
+        { rank: "Q", suit: "H" },
+        { rank: "J", suit: "c" },
+        { rank: "5", suit: "H" },
+      ];
+
+      dealer.playerManager = playerManager;
+      dealer.potManager = potManager;
+      dealer.handEvaluator = handEvaluator;
+      dealer.communityCards = communityCards;
+    });
+
+    it("should distribute the pot to the winner when there are no all-in players", () => {
+      const activePlayers = [
+        new Player("Alice", 1),
+        new Player("Bob", 2),
+        new Player("Charlie", 3),
+      ];
+
+      dealer.playerManager.getActivePlayers = jest
+        .fn()
+        .mockReturnValue(activePlayers);
+      dealer.playerManager.getAllInPlayers = jest.fn().mockReturnValue([]);
+      dealer.handEvaluator.determineWinner = jest
+        .fn()
+        .mockReturnValue([activePlayers[1]]);
+
+      dealer.potManager.getState = jest.fn().mockReturnValue({ pot: 20 });
+      dealer.potManager.awardPot = jest.fn();
+
+      dealer._executeShowdown();
+
+      expect(dealer.handEvaluator.determineWinner).toHaveBeenCalledWith(
+        activePlayers,
+        communityCards
+      );
+      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
+        activePlayers[1],
+        20
+      );
+    });
+
+    it("should distribute the pot to the winners when there are all-in players", () => {
+      const activePlayers = [
+        new Player("Alice", 1),
+        new Player("Bob", 2),
+        new Player("Charlie", 3),
+      ];
+      const allInPlayers = [new Player("David", 4), new Player("Eve", 5)];
+
+      dealer.playerManager.getActivePlayers = jest
+        .fn()
+        .mockReturnValue(activePlayers);
+      dealer.playerManager.getAllInPlayers = jest
+        .fn()
+        .mockReturnValue(allInPlayers);
+      dealer.handEvaluator.determineWinner = jest
+        .fn()
+        .mockReturnValue([activePlayers[1]]);
+      dealer.potManager.getState = jest.fn().mockReturnValue({ pot: 20 });
+      dealer.potManager.awardPot = jest.fn();
+
+      dealer._executeShowdown();
+
+      expect(dealer.handEvaluator.determineWinner).toHaveBeenCalledWith(
+        [...allInPlayers, ...activePlayers],
+        communityCards
+      );
+      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
+        activePlayers[1],
+        20
+      );
+      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
+        activePlayers[1],
+        20
+      );
     });
   });
 });
