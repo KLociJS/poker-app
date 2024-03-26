@@ -2,13 +2,45 @@ const Player = require("./player");
 const PlayerManager = require("./playerManager");
 
 describe("PlayerManager", () => {
+  let manager;
+  let players;
+
+  beforeEach(() => {
+    manager = new PlayerManager();
+    players = [
+      new Player("Alice", 1),
+      new Player("Bob", 2),
+      new Player("Charlie", 3),
+    ];
+    manager.setActivePlayers(players);
+  });
+
+  it("should add a player to the all in players", () => {
+    const player = new Player("Alice", 1);
+    manager.addAllInPlayer(player);
+    expect(manager.playersAllIn).toContain(player);
+  });
+
+  it("should return the players who are all in", () => {
+    const player = new Player("Alice", 1);
+    manager.addAllInPlayer(player);
+    expect(manager.getAllInPlayers()).toEqual([player]);
+  });
+
+  it("should set the active players", () => {
+    const players = [new Player("Alice", 1), new Player("Bob", 2)];
+    manager.setActivePlayers(players);
+    expect(manager.activePlayers).toEqual(players);
+  });
+
+  it("should return the active players", () => {
+    expect(manager.getActivePlayers()).toEqual(players);
+  });
+
   describe("setFirstAndLastPlayerToAct", () => {
     describe("should work with 2 players", () => {
-      let manager;
       let players;
-
       beforeEach(() => {
-        manager = new PlayerManager();
         players = [new Player("Alice", 1), new Player("Bob", 2)];
         manager.setActivePlayers(players);
       });
@@ -29,19 +61,6 @@ describe("PlayerManager", () => {
     });
 
     describe("should work with 2+ players", () => {
-      let manager;
-      let players;
-
-      beforeEach(() => {
-        manager = new PlayerManager();
-        players = [
-          new Player("Alice", 1),
-          new Player("Bob", 2),
-          new Player("Charlie", 3),
-        ];
-        manager.setActivePlayers(players);
-      });
-
       it("should set the first and last players to act", () => {
         players[0].hasDealerButton = true;
         manager.setFirstAndLastPlayerToAct();
@@ -66,19 +85,6 @@ describe("PlayerManager", () => {
   });
 
   describe("setNextPlayerToAct", () => {
-    let manager;
-    let players;
-
-    beforeEach(() => {
-      manager = new PlayerManager();
-      players = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      manager.setActivePlayers(players);
-    });
-
     it("should work when current player to act is not last", () => {
       manager.playerToAct = players[0];
       manager.setNextPlayerToAct();
@@ -92,34 +98,18 @@ describe("PlayerManager", () => {
     });
   });
 
-  describe("removeActivePlayer", () => {
-    it("should remove the player from the active players", () => {
-      manager = new PlayerManager();
-      const player = new Player("Alice", 1);
-      manager.setActivePlayers([
-        player,
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ]);
-      manager.removeActivePlayer(player);
-      expect(manager.activePlayers).not.toContain(player);
-    });
+  it("should remove the player from the active players", () => {
+    const player = new Player("Alice", 1);
+    manager.setActivePlayers([
+      player,
+      new Player("Bob", 2),
+      new Player("Charlie", 3),
+    ]);
+    manager.removeActivePlayer(player);
+    expect(manager.activePlayers).not.toContain(player);
   });
 
   describe("setLastPlayerToActAfterBetOrRaise", () => {
-    let manager;
-    let players;
-
-    beforeEach(() => {
-      manager = new PlayerManager();
-      players = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      manager.setActivePlayers(players);
-    });
-
     it("should return the last player if the first one bets or raises", () => {
       manager.setLastPlayerToActAfterBetOrRaise(players[0]);
 
