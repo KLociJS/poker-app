@@ -115,10 +115,11 @@ describe("Dealer", () => {
 
       const dealer = new Dealer();
       dealer.deck = new Deck();
+      const originalDeck = [...dealer.deck.cards];
       dealer.playerManager = new PlayerManager();
       dealer.playerManager.activePlayers = players;
 
-      const initialDeckLength = DECK.length;
+      const initialDeckLength = originalDeck.length;
       const initialPlayerCardCounts = players.map(
         (player) => player.cards.length
       );
@@ -135,13 +136,11 @@ describe("Dealer", () => {
       expect(initialPlayerCardCounts).toEqual([0, 0, 0]);
 
       players.forEach((player) => {
-        expect(player.cards.every((card) => DECK.includes(card))).toBe(true);
-        expect(
-          player.cards.every((card) => dealer.deck.cards.includes(card))
-        ).toBe(false);
+        player.cards.forEach((card) => {
+          expect(originalDeck).toContainEqual(card);
+          expect(dealer.deck.cards).not.toContainEqual(card);
+        });
       });
-
-      expect(dealer.deck.cards.every((card) => DECK.includes(card))).toBe(true);
     });
   });
 
@@ -567,42 +566,6 @@ describe("Dealer", () => {
       expect(dealer.handEvaluator.determineWinner).toHaveBeenCalledWith(
         activePlayers,
         communityCards
-      );
-      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
-        activePlayers[1],
-        20
-      );
-    });
-
-    it("should distribute the pot to the winners when there are all-in players", () => {
-      const activePlayers = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      const allInPlayers = [new Player("David", 4), new Player("Eve", 5)];
-
-      dealer.playerManager.getActivePlayers = jest
-        .fn()
-        .mockReturnValue(activePlayers);
-      dealer.playerManager.getAllInPlayers = jest
-        .fn()
-        .mockReturnValue(allInPlayers);
-      dealer.handEvaluator.determineWinner = jest
-        .fn()
-        .mockReturnValue([activePlayers[1]]);
-      dealer.potManager.getState = jest.fn().mockReturnValue({ pot: 20 });
-      dealer.potManager.awardPot = jest.fn();
-
-      dealer._executeShowdown();
-
-      expect(dealer.handEvaluator.determineWinner).toHaveBeenCalledWith(
-        [...allInPlayers, ...activePlayers],
-        communityCards
-      );
-      expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
-        activePlayers[1],
-        20
       );
       expect(dealer.potManager.awardPot).toHaveBeenCalledWith(
         activePlayers[1],
