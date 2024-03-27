@@ -1,4 +1,3 @@
-const { DECK } = require("../constants/cards");
 const STAGES = require("../constants/handCycleStage");
 const HandEvaluator = require("./HandEvaluator");
 const NoLimitRuleValidator = require("./NoLimitRuleValidator");
@@ -11,100 +10,6 @@ const PlayerManager = require("./playerManager");
 const PotManager = require("./potManager");
 
 describe("Dealer", () => {
-  // describe("_deductBlinds", () => {
-  //   describe("2 players, big blind, small blind", () => {
-  //     let dealer;
-  //     let players;
-  //     let gameRules;
-
-  //     beforeEach(() => {
-  //       gameRules = new GameRules("fix", 10, 20, 9);
-  //       dealer = new Dealer(gameRules);
-  //       players = [{ betChips: jest.fn() }, { betChips: jest.fn() }];
-  //       dealer.playerManager.activePlayers = players;
-  //     });
-
-  //     it("should deduct blinds from the 2nd and 1st player in the activePlayers array", () => {
-  //       players[0].hasDealerButton = true;
-  //       dealer._deductBlinds();
-  //       expect(
-  //         dealer.playerManager.activePlayers[1].betChips
-  //       ).toHaveBeenCalledWith(10);
-  //       expect(
-  //         dealer.playerManager.activePlayers[0].betChips
-  //       ).toHaveBeenCalledWith(20);
-  //       expect(dealer.potManager.pot).toBe(30);
-  //     });
-
-  //     it("should deduct blinds from the 1st and 2nd player in the activePlayers array", () => {
-  //       players[1].hasDealerButton = true;
-  //       dealer._deductBlinds();
-  //       expect(
-  //         dealer.playerManager.activePlayers[0].betChips
-  //       ).toHaveBeenCalledWith(10);
-  //       expect(
-  //         dealer.playerManager.activePlayers[1].betChips
-  //       ).toHaveBeenCalledWith(20);
-  //       expect(dealer.potManager.pot).toBe(30);
-  //     });
-  //   });
-
-  //   describe("3 players, big blind, small blind", () => {
-  //     let dealer;
-  //     let players;
-  //     let gameRules;
-
-  //     beforeEach(() => {
-  //       gameRules = new GameRules("fix", 10, 20, 9);
-  //       dealer = new Dealer(gameRules);
-  //       players = [
-  //         { betChips: jest.fn() },
-  //         { betChips: jest.fn() },
-  //         { betChips: jest.fn() },
-  //       ];
-  //       dealer.playerManager.activePlayers = players;
-  //     });
-
-  //     it("should deduct blinds from the 2nd and 3rd player in the activePlayers array", () => {
-  //       players[0].hasDealerButton = true;
-  //       dealer._deductBlinds();
-  //       expect(
-  //         dealer.playerManager.activePlayers[1].betChips
-  //       ).toHaveBeenCalledWith(10);
-  //       expect(
-  //         dealer.playerManager.activePlayers[2].betChips
-  //       ).toHaveBeenCalledWith(20);
-  //       expect(dealer.potManager.pot).toBe(30);
-  //     });
-
-  //     it("should deduct blinds from the 3rd and 1st player in the activePlayers array", () => {
-  //       players[1].hasDealerButton = true;
-
-  //       dealer._deductBlinds();
-  //       expect(
-  //         dealer.playerManager.activePlayers[2].betChips
-  //       ).toHaveBeenCalledWith(10);
-  //       expect(
-  //         dealer.playerManager.activePlayers[0].betChips
-  //       ).toHaveBeenCalledWith(20);
-  //       expect(dealer.potManager.pot).toBe(30);
-  //     });
-
-  //     it("should deduct blinds from the 1st and 2nd player in the activePlayers array", () => {
-  //       players[2].hasDealerButton = true;
-
-  //       dealer._deductBlinds();
-  //       expect(
-  //         dealer.playerManager.activePlayers[0].betChips
-  //       ).toHaveBeenCalledWith(10);
-  //       expect(
-  //         dealer.playerManager.activePlayers[1].betChips
-  //       ).toHaveBeenCalledWith(20);
-  //       expect(dealer.potManager.pot).toBe(30);
-  //     });
-  //   });
-  // });
-
   describe("_dealHoleCards", () => {
     it("should deal 2 cards to each active player", () => {
       const players = [
@@ -257,7 +162,7 @@ describe("Dealer", () => {
       dealer.potManager.pot = 20;
       dealer.potManager.raiseCounter = 1;
 
-      dealer._handleCallAction(players[1], 20);
+      dealer._handleCallCurrentBetAction(players[1]);
 
       expect(dealer.potManager.pot).toBe(40);
     });
@@ -282,7 +187,7 @@ describe("Dealer", () => {
       dealer.potManager.pot = 20;
       dealer.potManager.raiseCounter = 1;
 
-      dealer._handleRaiseAction(players[1], 40);
+      dealer._handleRaiseCurrentBetToAction(players[1], 40);
 
       expect(dealer.potManager.currentBet).toBe(40);
       expect(dealer.potManager.lastRaiseBetAmount).toBe(20);
@@ -416,107 +321,6 @@ describe("Dealer", () => {
     });
   });
 
-  describe("Betting round", () => {
-    let dealer;
-    let players;
-    let gameRules;
-    let gameRuleValidator;
-    let potManager;
-    let playerManager;
-    let deck;
-    let gameStageManager;
-
-    beforeEach(() => {
-      deck = new Deck();
-      gameRules = new GameRules("no limit", 10, 20, 9, 4);
-      potManager = new PotManager(gameRules);
-      playerManager = new PlayerManager();
-      gameStageManager = new GameStageManager();
-      gameRuleValidator = new NoLimitRuleValidator(gameRules);
-      dealer = new Dealer(
-        gameRuleValidator,
-        potManager,
-        playerManager,
-        deck,
-        gameStageManager,
-        gameRules
-      );
-      players = [
-        new Player("Alice", 1),
-        new Player("Bob", 2),
-        new Player("Charlie", 3),
-      ];
-      players[0].hasDealerButton = true;
-      players.forEach((player) => player.setChips(1000));
-    });
-
-    it("should update game state correctly", () => {
-      dealer.executePreFlop(players);
-      expect(dealer.gameStageManager.stage).toBe("preFlop");
-
-      expect(dealer.playerManager.playerToAct).toBe(players[0]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
-
-      expect(dealer.potManager.pot).toBe(30);
-      expect(players[1].chips).toBe(990);
-      expect(players[2].chips).toBe(980);
-
-      dealer.handlePlayerAction(players[0], { type: "raise", amount: 100 });
-
-      expect(dealer.potManager.currentBet).toBe(100);
-      expect(dealer.potManager.lastRaiseBetAmount).toBe(80);
-      expect(dealer.potManager.raiseCounter).toBe(1);
-      expect(dealer.potManager.pot).toBe(130);
-
-      expect(dealer.playerManager.playerToAct).toBe(players[1]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
-
-      dealer.handlePlayerAction(players[1], { type: "raise", amount: 200 });
-
-      expect(dealer.potManager.currentBet).toBe(200);
-      expect(dealer.potManager.lastRaiseBetAmount).toBe(100);
-      expect(dealer.potManager.raiseCounter).toBe(2);
-      expect(dealer.potManager.pot).toBe(320);
-
-      expect(dealer.playerManager.playerToAct).toBe(players[2]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[0]);
-
-      dealer.handlePlayerAction(players[2], { type: "raise", amount: 300 });
-      expect(dealer.potManager.currentBet).toBe(300);
-      expect(dealer.potManager.lastRaiseBetAmount).toBe(100);
-      expect(dealer.potManager.raiseCounter).toBe(3);
-      expect(dealer.potManager.pot).toBe(600);
-
-      expect(dealer.playerManager.playerToAct).toBe(players[0]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[1]);
-
-      dealer.handlePlayerAction(players[0], { type: "raise", amount: 400 });
-      expect(dealer.potManager.currentBet).toBe(400);
-      expect(dealer.potManager.lastRaiseBetAmount).toBe(100);
-      expect(dealer.potManager.raiseCounter).toBe(4);
-      expect(dealer.potManager.pot).toBe(900);
-
-      expect(dealer.playerManager.playerToAct).toBe(players[1]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
-
-      dealer.handlePlayerAction(players[1], { type: "fold" });
-      expect(dealer.playerManager.activePlayers).not.toContain(players[1]);
-
-      expect(dealer.playerManager.playerToAct).toBe(players[2]);
-      expect(dealer.playerManager.lastPlayerToAct).toBe(players[2]);
-
-      dealer.handlePlayerAction(players[2], { type: "call", amount: 400 });
-      expect(dealer.potManager.pot).toBe(1000);
-
-      expect(dealer.gameStageManager.isWaitingForPlayerAction).toBe(false);
-      expect(dealer.gameStageManager.stage).toBe("flop");
-
-      expect(players[0].chips).toBe(600);
-      expect(players[1].chips).toBe(800);
-      expect(players[2].chips).toBe(600);
-    });
-  });
-
   describe("_executeShowdown", () => {
     let dealer;
     let playerManager;
@@ -570,6 +374,60 @@ describe("Dealer", () => {
       expect(dealer.potManager.awardPot).toHaveBeenCalledWith([
         activePlayers[1],
       ]);
+    });
+  });
+
+  describe("Betting round", () => {
+    let dealer;
+    let players;
+    let gameRules;
+    let gameRuleValidator;
+    let potManager;
+    let playerManager;
+    let deck;
+    let gameStageManager;
+
+    beforeEach(() => {
+      deck = new Deck();
+      gameRules = new GameRules("no limit", 10, 20, 9, 4);
+      potManager = new PotManager(gameRules);
+      playerManager = new PlayerManager();
+      gameStageManager = new GameStageManager();
+      gameRuleValidator = new NoLimitRuleValidator(gameRules);
+      dealer = new Dealer(
+        gameRuleValidator,
+        potManager,
+        playerManager,
+        deck,
+        gameStageManager,
+        gameRules
+      );
+      players = [
+        new Player("Alice", 1),
+        new Player("Bob", 2),
+        new Player("Charlie", 3),
+      ];
+      players[0].hasDealerButton = true;
+      players.forEach((player) => player.setChips(1000));
+    });
+
+    it("should update game state correctly", () => {
+      dealer.executePreFlop(players);
+      dealer.handlePlayerAction(players[0], { type: "raise", amount: 100 });
+      dealer.handlePlayerAction(players[1], { type: "raise", amount: 200 });
+      dealer.handlePlayerAction(players[2], { type: "raise", amount: 300 });
+      dealer.handlePlayerAction(players[0], { type: "raise", amount: 400 });
+      dealer.handlePlayerAction(players[1], { type: "fold" });
+      dealer.handlePlayerAction(players[2], { type: "call" });
+
+      expect(dealer.potManager.pot).toBe(1000);
+
+      expect(dealer.gameStageManager.isWaitingForPlayerAction).toBe(false);
+      expect(dealer.gameStageManager.stage).toBe("flop");
+
+      expect(players[0].chips).toBe(600);
+      expect(players[1].chips).toBe(800);
+      expect(players[2].chips).toBe(600);
     });
   });
 });

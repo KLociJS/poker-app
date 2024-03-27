@@ -66,15 +66,6 @@ class Dealer {
     }
   }
 
-  _dealCommunityCard(numberOfCards) {
-    const cards = [];
-    this.deck.burnCard();
-    for (let i = 0; i < numberOfCards; i++) {
-      cards.push(this.deck.drawCard());
-    }
-    this.communityCards.push(...cards);
-  }
-
   handlePlayerAction(player, action) {
     // Validate player action
     this._validatePlayerAction(player, action);
@@ -86,11 +77,11 @@ class Dealer {
         this._checkIfBettingRoundIsOver(player);
         break;
       case "call":
-        this._handleCallAction(player, action.amount);
+        this._handleCallCurrentBetAction(player, action.amount);
         this._checkIfBettingRoundIsOver(player);
         break;
       case "raise":
-        this._handleRaiseAction(player, action.amount);
+        this._handleRaiseCurrentBetToAction(player, action.amount);
         break;
       case "bet":
         this._handleBetAction(player, action.amount);
@@ -106,6 +97,15 @@ class Dealer {
       default:
         throw new Error("Invalid player action");
     }
+  }
+
+  _dealCommunityCard(numberOfCards) {
+    const cards = [];
+    this.deck.burnCard();
+    for (let i = 0; i < numberOfCards; i++) {
+      cards.push(this.deck.drawCard());
+    }
+    this.communityCards.push(...cards);
   }
 
   _validatePlayerAction(player, action) {
@@ -193,13 +193,15 @@ class Dealer {
     this.playerManager.setNextPlayerToAct();
   }
 
-  _handleCallAction(player, amount) {
-    this.potManager.addToPot(amount - player.currentRoundBet);
-    player.betChips(amount);
+  _handleCallCurrentBetAction(player) {
+    const { currentBet } = this.potManager.getState();
+    const amount = currentBet - player.currentRoundBet;
+    this.potManager.addToPot(amount);
+    player.betChips(currentBet);
     this.playerManager.setNextPlayerToAct();
   }
 
-  _handleRaiseAction(player, amount) {
+  _handleRaiseCurrentBetToAction(player, amount) {
     const { currentBet } = this.potManager.getState();
     this.potManager.setLastRaiseBetAmount(amount - currentBet);
     this.potManager.setCurrentBet(amount);
