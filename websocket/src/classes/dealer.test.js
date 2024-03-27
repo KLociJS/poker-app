@@ -266,12 +266,16 @@ describe("Dealer", () => {
     beforeEach(() => {
       dealer = new Dealer();
       dealer.gameStageManager = new GameStageManager();
+      dealer.playerManager = new PlayerManager();
+      dealer.playerManager.setFirstAndLastPlayerToAct = jest.fn();
       dealer._dealCommunityCard = jest.fn();
       dealer._executeShowdown = jest.fn();
     });
 
     it("should deal 3 community cards on FLOP stage", () => {
-      dealer.gameStageManager.getStage = jest.fn().mockReturnValue(STAGES.FLOP);
+      dealer.gameStageManager.getState = jest
+        .fn()
+        .mockReturnValue({ stage: STAGES.FLOP });
 
       dealer.executeNextStage();
 
@@ -280,7 +284,9 @@ describe("Dealer", () => {
     });
 
     it("should deal 1 community card on TURN stage", () => {
-      dealer.gameStageManager.getStage = jest.fn().mockReturnValue(STAGES.TURN);
+      dealer.gameStageManager.getState = jest
+        .fn()
+        .mockReturnValue({ stage: STAGES.TURN });
 
       dealer.executeNextStage();
 
@@ -289,9 +295,9 @@ describe("Dealer", () => {
     });
 
     it("should deal 1 community card on RIVER stage", () => {
-      dealer.gameStageManager.getStage = jest
+      dealer.gameStageManager.getState = jest
         .fn()
-        .mockReturnValue(STAGES.RIVER);
+        .mockReturnValue({ stage: STAGES.RIVER });
 
       dealer.executeNextStage();
 
@@ -300,9 +306,9 @@ describe("Dealer", () => {
     });
 
     it("should determine the winner on SHOWDOWN stage", () => {
-      dealer.gameStageManager.getStage = jest
+      dealer.gameStageManager.getState = jest
         .fn()
-        .mockReturnValue(STAGES.SHOWDOWN);
+        .mockReturnValue({ stage: STAGES.SHOWDOWN });
 
       dealer.executeNextStage();
 
@@ -311,7 +317,7 @@ describe("Dealer", () => {
     });
 
     it("should throw an error for invalid game stage", () => {
-      dealer.gameStageManager.getStage = jest
+      dealer.gameStageManager.getState = jest
         .fn()
         .mockReturnValue("INVALID_STAGE");
 
@@ -377,7 +383,7 @@ describe("Dealer", () => {
     });
   });
 
-  describe("Betting round", () => {
+  describe("betting round", () => {
     let dealer;
     let players;
     let gameRules;
@@ -411,7 +417,7 @@ describe("Dealer", () => {
       players.forEach((player) => player.setChips(1000));
     });
 
-    it("should update game state correctly", () => {
+    it("should update game state correctly on 2+ round raises", () => {
       dealer.executePreFlop(players);
       dealer.handlePlayerAction(players[0], { type: "raise", amount: 100 });
       dealer.handlePlayerAction(players[1], { type: "raise", amount: 200 });
@@ -428,6 +434,202 @@ describe("Dealer", () => {
       expect(players[0].chips).toBe(600);
       expect(players[1].chips).toBe(800);
       expect(players[2].chips).toBe(600);
+    });
+
+    it("should update game state correctly on checks", () => {
+      dealer.executePreFlop(players);
+      dealer.handlePlayerAction(players[0], { type: "call" });
+      dealer.handlePlayerAction(players[1], { type: "call" });
+      dealer.handlePlayerAction(players[2], { type: "check" });
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "check" });
+      dealer.handlePlayerAction(players[1], { type: "check" });
+      dealer.handlePlayerAction(players[2], { type: "check" });
+
+      expect(dealer.potManager.pot).toBe(60);
+
+      expect(dealer.gameStageManager.isWaitingForPlayerAction).toBe(false);
+      expect(dealer.gameStageManager.stage).toBe("turn");
+
+      expect(players[0].chips).toBe(980);
+      expect(players[1].chips).toBe(980);
+      expect(players[2].chips).toBe(980);
+    });
+
+    it("should update game state correctly on all-in", () => {
+      dealer.executePreFlop(players);
+      dealer.handlePlayerAction(players[0], { type: "allIn" });
+      dealer.handlePlayerAction(players[1], { type: "call" });
+      expect(players[0].chips).toBe(0);
+      expect(players[1].chips).toBe(0);
+      dealer.handlePlayerAction(players[2], { type: "fold" });
+
+      expect(dealer.potManager.pot).toBe(2020);
+
+      expect(dealer.gameStageManager.isWaitingForPlayerAction).toBe(false);
+      expect(dealer.gameStageManager.stage).toBe("flop");
+
+      expect(players[0].chips).toBe(0);
+      expect(players[1].chips).toBe(0);
+      expect(players[2].chips).toBe(980);
+    });
+  });
+
+  describe("complete hand cycle", () => {
+    let dealer;
+    let players;
+    let gameRules;
+    let gameRuleValidator;
+    let potManager;
+    let playerManager;
+    let deck;
+    let gameStageManager;
+    let handEvaluator;
+
+    beforeEach(() => {
+      players = [
+        new Player("Alice", 1),
+        new Player("Bob", 2),
+        new Player("Charlie", 3),
+      ];
+      players[0].hasDealerButton = true;
+      players.forEach((player) => player.setChips(1000));
+      deck = new Deck();
+      gameRules = new GameRules("no limit", 10, 20, 9, 4);
+      potManager = new PotManager(gameRules);
+      playerManager = new PlayerManager();
+      handEvaluator = new HandEvaluator();
+      gameStageManager = new GameStageManager();
+      gameRuleValidator = new NoLimitRuleValidator(gameRules);
+      dealer = new Dealer(
+        gameRuleValidator,
+        potManager,
+        playerManager,
+        deck,
+        gameStageManager,
+        gameRules,
+        handEvaluator
+      );
+    });
+
+    it("should pick the right winner and reward pot to one player", () => {
+      const hand1 = [
+        { rank: "A", suit: "c" },
+        { rank: "J", suit: "c" },
+      ];
+      const hand2 = [
+        { rank: "K", suit: "c" },
+        { rank: "T", suit: "c" },
+      ];
+      const hand3 = [
+        { rank: "Q", suit: "c" },
+        { rank: "9", suit: "c" },
+      ];
+
+      const communityCards = [
+        { rank: "7", suit: "c" },
+        { rank: "6", suit: "c" },
+        { rank: "5", suit: "c" },
+        { rank: "3", suit: "c" },
+        { rank: "A", suit: "d" },
+      ];
+
+      dealer.executePreFlop(players);
+      players[0].cards = hand1;
+      players[1].cards = hand3;
+      players[2].cards = hand2;
+
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 20
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 40
+      dealer.handlePlayerAction(players[2], { type: "check" }); // 60
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "check" });
+      dealer.handlePlayerAction(players[1], { type: "bet", amount: 20 }); // 80
+      dealer.handlePlayerAction(players[2], { type: "call" }); // 100
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 120
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "bet", amount: 20 }); // 140
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 160
+      dealer.handlePlayerAction(players[2], { type: "raise", amount: 50 }); // 210
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 240
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 270
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "check" });
+      dealer.handlePlayerAction(players[1], { type: "check" });
+      dealer.handlePlayerAction(players[2], { type: "check" });
+
+      expect(dealer.potManager.pot).toBe(270);
+      dealer.communityCards = communityCards;
+
+      dealer.executeNextStage();
+      expect(dealer.gameStageManager.stage).toBe("showdown");
+      expect(players[0].chips).toBe(1180);
+      expect(players[1].chips).toBe(910);
+      expect(players[2].chips).toBe(910);
+    });
+
+    it("should pick the right winners and reward pot to two players", () => {
+      const hand1 = [
+        { rank: "A", suit: "c" },
+        { rank: "J", suit: "c" },
+      ];
+      const hand2 = [
+        { rank: "A", suit: "s" },
+        { rank: "J", suit: "s" },
+      ];
+      const hand3 = [
+        { rank: "Q", suit: "c" },
+        { rank: "9", suit: "c" },
+      ];
+
+      const communityCards = [
+        { rank: "7", suit: "c" },
+        { rank: "6", suit: "c" },
+        { rank: "5", suit: "h" },
+        { rank: "3", suit: "h" },
+        { rank: "A", suit: "d" },
+      ];
+
+      dealer.executePreFlop(players);
+      players[0].cards = hand1;
+      players[1].cards = hand3;
+      players[2].cards = hand2;
+
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 20
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 40
+      dealer.handlePlayerAction(players[2], { type: "check" }); // 60
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "check" });
+      dealer.handlePlayerAction(players[1], { type: "bet", amount: 20 }); // 80
+      dealer.handlePlayerAction(players[2], { type: "call" }); // 100
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 120
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "bet", amount: 20 }); // 140
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 160
+      dealer.handlePlayerAction(players[2], { type: "raise", amount: 50 }); // 210
+      dealer.handlePlayerAction(players[0], { type: "call" }); // 240
+      dealer.handlePlayerAction(players[1], { type: "call" }); // 270
+
+      dealer.executeNextStage();
+      dealer.handlePlayerAction(players[0], { type: "check" });
+      dealer.handlePlayerAction(players[1], { type: "check" });
+      dealer.handlePlayerAction(players[2], { type: "check" });
+
+      dealer.communityCards = communityCards;
+
+      expect(dealer.potManager.pot).toBe(270);
+
+      dealer.executeNextStage();
+      expect(dealer.gameStageManager.stage).toBe("showdown");
+      expect(players[0].chips).toBe(1045); // winner
+      expect(players[1].chips).toBe(910);
+      expect(players[2].chips).toBe(1045); // winner
     });
   });
 });

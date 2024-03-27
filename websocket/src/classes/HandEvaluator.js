@@ -31,11 +31,13 @@ class HandEvaluator {
       const indexOfWinner = playerHands.findIndex(
         (playerHand) => playerHand.hand === winner[0]
       );
-      return [playerHands[indexOfWinner]];
+      return [playerHands[indexOfWinner].player];
     } else {
-      return winner.map((winningHand) =>
-        playerHands.find((playerHand) => playerHand.hand === winningHand)
-      );
+      return winner
+        .map((winningHand) =>
+          playerHands.find((playerHand) => playerHand.hand === winningHand)
+        )
+        .map((playerHand) => playerHand.player);
     }
   }
 }

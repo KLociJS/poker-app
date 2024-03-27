@@ -34,7 +34,7 @@ describe("HandEvaluator", () => {
 
       const winner = evaluator.determineWinner(players, communityCards);
 
-      expect(winner[0].player).toEqual(players[0]);
+      expect(winner[0]).toEqual(players[0]);
     });
 
     it("should return an array of players when there are multiple winners", () => {
@@ -69,7 +69,7 @@ describe("HandEvaluator", () => {
 
       const winners = evaluator.determineWinner(players, communityCards);
 
-      expect(winners.map((w) => w.player)).toEqual(players);
+      expect(winners).toEqual(players);
     });
   });
 });

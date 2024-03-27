@@ -42,23 +42,27 @@ class Dealer {
   }
 
   executeNextStage() {
-    const stage = this.gameStageManager.getStage();
+    const { stage } = this.gameStageManager.getState();
 
     switch (stage) {
       case STAGES.FLOP:
         this._dealCommunityCard(3);
+        this.playerManager.setFirstAndLastPlayerToAct();
         this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.TURN:
         this._dealCommunityCard(1);
+        this.playerManager.setFirstAndLastPlayerToAct();
         this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.RIVER:
         this._dealCommunityCard(1);
+        this.playerManager.setFirstAndLastPlayerToAct();
         this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       case STAGES.SHOWDOWN:
         this._executeShowdown();
+        this.playerManager.setFirstAndLastPlayerToAct();
         this.gameStageManager.toggleWaitingForPlayerAction();
         break;
       default:
@@ -213,17 +217,20 @@ class Dealer {
   }
 
   _handleAllInAction(player) {
-    this.playerManager.addAllInPlayer(player);
-    this.playerManager.removeActivePlayer(player);
+    const { currentBet } = this.potManager.getState();
 
-    if (player.chips > this.currentBet) {
+    if (player.chips > currentBet) {
+      this.potManager.setLastRaiseBetAmount(player.chips - currentBet);
       this.potManager.setCurrentBet(player.chips);
-      this.potManager.setLastRaiseBetAmount(player.chips);
       this.potManager.incrementRaiseCounter();
       this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     }
     this.potManager.addToPot(player.chips);
     player.betChips(player.chips);
+
+    this.playerManager.addAllInPlayer(player);
+    this.playerManager.removeActivePlayer(player);
+
     this.playerManager.setNextPlayerToAct();
   }
 

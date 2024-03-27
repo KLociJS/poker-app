@@ -34,7 +34,7 @@ class GlobalRuleValidator {
     }
 
     // Check if player able to check
-    if (action.type === "check" && currentBet !== 0) {
+    if (action.type === "check" && currentBet - player.currentRoundBet !== 0) {
       throw new Error("Invalid player action: Cannot check when bet is made");
     }
 
