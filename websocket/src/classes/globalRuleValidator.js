@@ -10,7 +10,7 @@ class GlobalRuleValidator {
     isWaitingForPlayerAction,
     raiseCounter
   ) {
-    const { raiseCountLimit } = this.gameRules.getRules();
+    const { raiseCountLimit, bigBlind } = this.gameRules.getRules();
     // Check if the raise limit count reached
     if (action.type === "raise" && raiseCounter >= raiseCountLimit) {
       throw new Error("Invalid player action: Raise limit reached");
@@ -33,13 +33,6 @@ class GlobalRuleValidator {
       throw new Error("Invalid player action: Not player's turn");
     }
 
-    //Check if the player is able to raise
-    if (action.type === "raise" && currentBet === 0) {
-      throw new Error(
-        "Invalid player action: Cannot raise when no bet is made"
-      );
-    }
-
     // Check if player able to check
     if (action.type === "check" && currentBet !== 0) {
       throw new Error("Invalid player action: Cannot check when bet is made");
@@ -52,7 +45,12 @@ class GlobalRuleValidator {
       );
     }
 
-    // Check if the player able to call
+    // check if the player bets less than the minimum bet
+    if (action.type === "bet" && action.amount < bigBlind) {
+      throw new Error("Invalid player action: Bet amount too low");
+    }
+
+    // Check if the player wants to call when no bet is placed
     if (action.type === "call" && currentBet === 0) {
       throw new Error("Invalid player action: Cannot call when no bet is made");
     }

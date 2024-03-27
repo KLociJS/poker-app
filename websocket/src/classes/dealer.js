@@ -107,6 +107,7 @@ class Dealer {
         throw new Error("Invalid player action");
     }
   }
+
   _validatePlayerAction(player, action) {
     const { currentBet, lastRaiseBetAmount, raiseCounter } =
       this.potManager.getState();
@@ -171,14 +172,17 @@ class Dealer {
       raiseCounter
     );
   }
+
   _handleCheckAction() {
     this.playerManager.setNextPlayerToAct();
   }
+
   _handleFoldAction(player) {
     player.cleanCards();
     this.playerManager.setNextPlayerToAct();
     this.playerManager.removeActivePlayer(player);
   }
+
   _handleBetAction(player, amount) {
     player.betChips(amount);
     this.potManager.setCurrentBet(amount);
@@ -188,11 +192,13 @@ class Dealer {
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
+
   _handleCallAction(player, amount) {
     this.potManager.addToPot(amount - player.currentRoundBet);
     player.betChips(amount);
     this.playerManager.setNextPlayerToAct();
   }
+
   _handleRaiseAction(player, amount) {
     const { currentBet } = this.potManager.getState();
     this.potManager.setLastRaiseBetAmount(amount - currentBet);
@@ -203,6 +209,7 @@ class Dealer {
     this.playerManager.setLastPlayerToActAfterBetOrRaise(player);
     this.playerManager.setNextPlayerToAct();
   }
+
   _handleAllInAction(player) {
     this.playerManager.addAllInPlayer(player);
     this.playerManager.removeActivePlayer(player);
@@ -217,6 +224,7 @@ class Dealer {
     player.betChips(player.chips);
     this.playerManager.setNextPlayerToAct();
   }
+
   _checkIfBettingRoundIsOver(player) {
     const lastPlayerToAct = this.playerManager.getLastPlayerToAct();
     if (lastPlayerToAct.id === player.id) {
@@ -231,6 +239,7 @@ class Dealer {
       this.gameStageManager.setNextStage();
     }
   }
+
   _dealHoleCards() {
     this._clearPlayerCards();
     this.deck.shuffle();
@@ -243,6 +252,7 @@ class Dealer {
       player.addCard(card);
     }
   }
+
   _clearPlayerCards() {
     const activePlayers = this.playerManager.getActivePlayers();
     activePlayers.forEach((player) => {

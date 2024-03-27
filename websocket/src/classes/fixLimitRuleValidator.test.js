@@ -2,13 +2,13 @@ const FixLimitRuleValidator = require("./fixLimitRuleValidator");
 
 describe("FixLimitRuleValidator", () => {
   let validator;
-  let player,
-    action,
-    handCycleStage,
-    lastRaiseBetAmount,
-    currentBet,
-    raiseCounter,
-    gameRules;
+  let player;
+  let action;
+  let handCycleStage;
+  let lastRaiseBetAmount;
+  let currentBet;
+  let raiseCounter;
+  let gameRules;
 
   beforeEach(() => {
     player = { currentRoundBet: 0 };

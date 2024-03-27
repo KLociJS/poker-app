@@ -36,6 +36,20 @@ describe("NoLimitRuleValidator", () => {
     ).toThrow("Invalid player action: Cannot raise when no bet is made");
   });
 
+  it("should not throw an error if player tries to raise when a bet is made", () => {
+    action.type = "raise";
+    currentBet = 100;
+    expect(() =>
+      validator.validateGameSpecificRules(
+        player,
+        action,
+        currentBet,
+        lastRaiseBetAmount,
+        raiseCounter
+      )
+    ).not.toThrow();
+  });
+
   it("should throw an error if raise amount is too low", () => {
     action.type = "raise";
     action.amount = 99;
@@ -51,5 +65,22 @@ describe("NoLimitRuleValidator", () => {
         raiseCounter
       )
     ).toThrow("Invalid player action: Raise amount too low");
+  });
+
+  it("should not throw an error if raise amount is valid", () => {
+    action.type = "raise";
+    action.amount = 100;
+    player.currentRoundBet = 50;
+    lastRaiseBetAmount = 50;
+    currentBet = 100;
+    expect(() =>
+      validator.validateGameSpecificRules(
+        player,
+        action,
+        currentBet,
+        lastRaiseBetAmount,
+        raiseCounter
+      )
+    ).not.toThrow();
   });
 });

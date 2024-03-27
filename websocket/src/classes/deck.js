@@ -1,8 +1,7 @@
-const { DECK, SUIT, RANK } = require("../constants/cards");
+const { SUIT, RANK } = require("../constants/cards");
 
 class Deck {
   constructor() {
-    this.cards = [];
     this._initDeck();
   }
 
